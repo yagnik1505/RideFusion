@@ -1,0 +1,120 @@
+@model RideFusion.Models.Ride
+@{
+    ViewData["Title"] = "Offer a Ride";
+}
+
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h4 class="mb-0">
+                        <i class="fas fa-car"></i> Offer a Ride
+                    </h4>
+                    <p class="text-muted mb-0">Share your journey and help others save money while reducing your travel costs.</p>
+                </div>
+                <div class="card-body">
+                    <form asp-action="Create" method="post">
+                        <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label asp-for="StartLocation" class="form-label">
+                                    <i class="fas fa-map-marker-alt text-primary"></i> Pickup Location
+                                </label>
+                                <input asp-for="StartLocation" class="form-control" placeholder="Enter pickup location" />
+                                <span asp-validation-for="StartLocation" class="text-danger"></span>
+                            </div>
+                            <div class="col-md-6">
+                                <label asp-for="EndLocation" class="form-label">
+                                    <i class="fas fa-map-marker-alt text-success"></i> Destination
+                                </label>
+                                <input asp-for="EndLocation" class="form-control" placeholder="Enter destination" />
+                                <span asp-validation-for="EndLocation" class="text-danger"></span>
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label asp-for="StartDateTime" class="form-label">
+                                    <i class="fas fa-calendar"></i> Date & Time
+                                </label>
+                                <input asp-for="StartDateTime" class="form-control" type="datetime-local" />
+                                <span asp-validation-for="StartDateTime" class="text-danger"></span>
+                            </div>
+                            <div class="col-md-6">
+                                <label asp-for="AvailableSeats" class="form-label">
+                                    <i class="fas fa-users"></i> Available Seats
+                                </label>
+                                <input asp-for="AvailableSeats" class="form-control" type="number" min="1" max="10" value="1" />
+                                <span asp-validation-for="AvailableSeats" class="text-danger"></span>
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label asp-for="PricePerSeat" class="form-label">
+                                    <i class="fas fa-dollar-sign"></i> Price per Seat
+                                </label>
+                                <div class="input-group">
+                                    <span class="input-group-text">$</span>
+                                    <input asp-for="PricePerSeat" class="form-control" type="number" step="0.01" min="0" placeholder="0.00" />
+                                </div>
+                                <span asp-validation-for="PricePerSeat" class="text-danger"></span>
+                            </div>
+                            <div class="col-md-6">
+                                <label asp-for="DistanceKm" class="form-label">
+                                    <i class="fas fa-route"></i> Distance (km) - Optional
+                                </label>
+                                <input asp-for="DistanceKm" class="form-control" type="number" step="0.1" min="0" placeholder="0.0" />
+                                <span asp-validation-for="DistanceKm" class="text-danger"></span>
+                            </div>
+                        </div>
+
+                        <div class="row mb-4">
+                            <div class="col-md-6">
+                                <label asp-for="EstimatedMinutes" class="form-label">
+                                    <i class="fas fa-hourglass-half"></i> Estimated Duration (minutes) - Optional
+                                </label>
+                                <input asp-for="EstimatedMinutes" class="form-control" type="number" min="1" placeholder="0" />
+                                <span asp-validation-for="EstimatedMinutes" class="text-danger"></span>
+                            </div>
+                        </div>
+
+                        <div class="alert alert-info">
+                            <h6><i class="fas fa-info-circle"></i> Important Notes:</h6>
+                            <ul class="mb-0">
+                                <li>Be punctual and communicate clearly with passengers</li>
+                                <li>Set a fair price that covers your fuel costs</li>
+                                <li>Ensure your vehicle is clean and safe for passengers</li>
+                                <li>You can manage bookings and communicate with passengers through the platform</li>
+                            </ul>
+                        </div>
+
+                        <div class="d-flex justify-content-between">
+                            <a asp-action="Search" class="btn btn-outline-secondary">
+                                <i class="fas fa-arrow-left"></i> Back to Search
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-plus"></i> Post Ride
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://kit.fontawesome.com/your-fontawesome-kit.js" crossorigin="anonymous"></script>
+    <script>
+        // Set minimum date to today
+        document.addEventListener('DOMContentLoaded', function() {
+            const dateInput = document.querySelector('input[type="datetime-local"]');
+            const now = new Date();
+            now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+            dateInput.min = now.toISOString().slice(0, 16);
+        });
+    </script>
+}

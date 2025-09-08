@@ -1,0 +1,120 @@
+@model RideFusion.Models.Booking
+@{
+    ViewData["Title"] = "Book Ride";
+    var ride = ViewBag.Ride as RideFusion.Models.Ride;
+}
+
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h4 class="mb-0">
+                        <i class="fas fa-bookmark"></i> Book This Ride
+                    </h4>
+                </div>
+                <div class="card-body">
+                    @if (ride != null)
+                    {
+                        <div class="alert alert-info mb-4">
+                            <h6><i class="fas fa-info-circle"></i> Ride Details:</h6>
+                            <p class="mb-1">
+                                <strong>Route:</strong> @ride.StartLocation → @ride.EndLocation
+                            </p>
+                            <p class="mb-1">
+                                <strong>Date & Time:</strong> @ride.StartDateTime.ToString("dddd, MMMM dd, yyyy at HH:mm")
+                            </p>
+                            <p class="mb-1">
+                                <strong>Driver:</strong> @ride.Driver.FullName
+                            </p>
+                            <p class="mb-1">
+                                <strong>Available Seats:</strong> @ride.AvailableSeats
+                            </p>
+                            <p class="mb-0">
+                                <strong>Price per Seat:</strong> $@ride.PricePerSeat
+                            </p>
+                        </div>
+
+                        <form asp-action="Create" method="post">
+                            <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
+                            
+                            <input type="hidden" asp-for="RideId" value="@ride.RideId" />
+                            
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <label asp-for="SeatsBooked" class="form-label">
+                                        <i class="fas fa-users"></i> Number of Seats
+                                    </label>
+                                    <select asp-for="SeatsBooked" class="form-select">
+                                        @for (int i = 1; i <= Math.Min(ride.AvailableSeats, 4); i++)
+                                        {
+                                            <option value="@i">@i seat@(i > 1 ? "s" : "")</option>
+                                        }
+                                    </select>
+                                    <span asp-validation-for="SeatsBooked" class="text-danger"></span>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Total Cost</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text">$</span>
+                                        <input type="text" class="form-control" id="totalCost" readonly 
+                                               value="@ride.PricePerSeat" />
+                                    </div>
+                                    <small class="text-muted">Price will be calculated automatically</small>
+                                </div>
+                            </div>
+
+                            <div class="alert alert-warning">
+                                <h6><i class="fas fa-shield-alt"></i> Security Notice:</h6>
+                                <p class="mb-0">
+                                    After booking, you will receive an OTP (One-Time Password) via email/SMS. 
+                                    You must verify this OTP before the ride starts to confirm your booking.
+                                </p>
+                            </div>
+
+                            <div class="d-flex justify-content-between">
+                                <a asp-controller="Ride" asp-action="Details" asp-route-id="@ride.RideId" 
+                                   class="btn btn-outline-secondary">
+                                    <i class="fas fa-arrow-left"></i> Back to Ride Details
+                                </a>
+                                <button type="submit" class="btn btn-success">
+                                    <i class="fas fa-bookmark"></i> Book & Get OTP
+                                </button>
+                            </div>
+                        </form>
+                    }
+                    else
+                    {
+                        <div class="alert alert-danger">
+                            <h6><i class="fas fa-exclamation-triangle"></i> Error</h6>
+                            <p class="mb-0">Ride not found. Please try again.</p>
+                        </div>
+                        <a asp-controller="Ride" asp-action="Search" class="btn btn-primary">
+                            <i class="fas fa-search"></i> Search Rides
+                        </a>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://kit.fontawesome.com/your-fontawesome-kit.js" crossorigin="anonymous"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const seatsSelect = document.querySelector('select[name="SeatsBooked"]');
+            const totalCostInput = document.getElementById('totalCost');
+            const pricePerSeat = @ride?.PricePerSeat ?? 0;
+
+            function updateTotalCost() {
+                const seats = parseInt(seatsSelect.value);
+                const total = pricePerSeat * seats;
+                totalCostInput.value = total.toFixed(2);
+            }
+
+            seatsSelect.addEventListener('change', updateTotalCost);
+            updateTotalCost(); // Initial calculation
+        });
+    </script>
+}

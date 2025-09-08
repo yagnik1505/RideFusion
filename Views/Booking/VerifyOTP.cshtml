@@ -1,0 +1,124 @@
+@model RideFusion.Models.Booking
+@{
+    ViewData["Title"] = "Verify OTP";
+}
+
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header text-center">
+                    <h4 class="mb-0">
+                        <i class="fas fa-shield-alt text-primary"></i> Verify Your Booking
+                    </h4>
+                    <p class="text-muted mb-0">Enter the OTP sent to your registered email/phone</p>
+                </div>
+                <div class="card-body">
+                    @if (Model != null)
+                    {
+                        <div class="alert alert-info mb-4">
+                            <h6><i class="fas fa-info-circle"></i> Booking Details:</h6>
+                            <p class="mb-1">
+                                <strong>Route:</strong> @Model.Ride.StartLocation → @Model.Ride.EndLocation
+                            </p>
+                            <p class="mb-1">
+                                <strong>Date & Time:</strong> @Model.Ride.StartDateTime.ToString("dddd, MMMM dd, yyyy at HH:mm")
+                            </p>
+                            <p class="mb-1">
+                                <strong>Driver:</strong> @Model.Ride.Driver.FullName
+                            </p>
+                            <p class="mb-1">
+                                <strong>Seats:</strong> @Model.SeatsBooked
+                            </p>
+                            <p class="mb-0">
+                                <strong>Total Cost:</strong> $@(Model.Ride.PricePerSeat * Model.SeatsBooked)
+                            </p>
+                        </div>
+
+                        <div class="alert alert-warning mb-4">
+                            <h6><i class="fas fa-exclamation-triangle"></i> Important:</h6>
+                            <ul class="mb-0">
+                                <li>Check your email and SMS for the 6-digit OTP</li>
+                                <li>OTP is valid until the ride start time</li>
+                                <li>Without verification, your booking will be cancelled</li>
+                            </ul>
+                        </div>
+
+                        <form asp-action="VerifyOTP" method="post">
+                            <input type="hidden" asp-for="BookingId" />
+                            
+                            <div class="mb-4">
+                                <label for="otp" class="form-label">
+                                    <i class="fas fa-key"></i> Enter OTP
+                                </label>
+                                <input type="text" id="otp" name="otp" class="form-control form-control-lg text-center" 
+                                       maxlength="6" placeholder="000000" style="font-size: 2rem; letter-spacing: 0.5rem;" />
+                                <div class="form-text">Enter the 6-digit code sent to your registered contact</div>
+                            </div>
+
+                            <div class="d-grid gap-2">
+                                <button type="submit" class="btn btn-success btn-lg">
+                                    <i class="fas fa-check"></i> Verify OTP
+                                </button>
+                                <a asp-controller="Booking" asp-action="MyBookings" class="btn btn-outline-secondary">
+                                    <i class="fas fa-arrow-left"></i> Back to My Bookings
+                                </a>
+                            </div>
+                        </form>
+
+                        <div class="text-center mt-4">
+                            <p class="text-muted">
+                                <i class="fas fa-question-circle"></i>
+                                Didn't receive OTP? 
+                                <a href="#" class="text-decoration-none">Resend OTP</a>
+                            </p>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="alert alert-danger">
+                            <h6><i class="fas fa-exclamation-triangle"></i> Error</h6>
+                            <p class="mb-0">Booking not found. Please try again.</p>
+                        </div>
+                        <a asp-controller="Booking" asp-action="MyBookings" class="btn btn-primary">
+                            <i class="fas fa-arrow-left"></i> Back to My Bookings
+                        </a>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://kit.fontawesome.com/your-fontawesome-kit.js" crossorigin="anonymous"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const otpInput = document.getElementById('otp');
+            
+            // Auto-format OTP input
+            otpInput.addEventListener('input', function(e) {
+                // Remove non-numeric characters
+                e.target.value = e.target.value.replace(/\D/g, '');
+                
+                // Limit to 6 digits
+                if (e.target.value.length > 6) {
+                    e.target.value = e.target.value.slice(0, 6);
+                }
+            });
+
+            // Auto-submit when 6 digits are entered
+            otpInput.addEventListener('input', function(e) {
+                if (e.target.value.length === 6) {
+                    // Optional: Auto-submit after a short delay
+                    // setTimeout(() => {
+                    //     e.target.form.submit();
+                    // }, 500);
+                }
+            });
+
+            // Focus on OTP input
+            otpInput.focus();
+        });
+    </script>
+}

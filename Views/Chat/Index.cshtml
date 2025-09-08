@@ -1,0 +1,226 @@
+@{
+    ViewData["Title"] = "Chat";
+    var ride = ViewBag.Ride as RideFusion.Models.Ride;
+    var messages = ViewBag.Messages as List<RideFusion.Models.ChatMessage>;
+}
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card h-100">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">
+                        <i class="fas fa-comments"></i> Chat
+                    </h5>
+                    <div>
+                        <span class="badge bg-primary">@ride?.StartLocation → @ride?.EndLocation</span>
+                    </div>
+                </div>
+                <div class="card-body d-flex flex-column" style="height: 500px;">
+                    <div id="chatMessages" class="flex-grow-1 overflow-auto mb-3" style="max-height: 400px;">
+                        @if (messages != null && messages.Any())
+                        {
+                            @foreach (var message in messages)
+                            {
+                                <div class="message @(message.SenderId == User.Identity.Name ? "message-sent" : "message-received")">
+                                    <div class="message-content">
+                                        <div class="message-header">
+                                            <strong>@message.Sender.FullName</strong>
+                                            <small class="text-muted">@message.Timestamp.ToString("HH:mm")</small>
+                                        </div>
+                                        <div class="message-text">@message.MessageText</div>
+                                    </div>
+                                </div>
+                            }
+                        }
+                        else
+                        {
+                            <div class="text-center text-muted py-4">
+                                <i class="fas fa-comments fa-3x mb-3"></i>
+                                <p>No messages yet. Start the conversation!</p>
+                            </div>
+                        }
+                    </div>
+                    
+                    <form id="chatForm" class="d-flex">
+                        <input type="hidden" id="rideId" value="@ride?.RideId" />
+                        <input type="text" id="messageInput" class="form-control me-2" 
+                               placeholder="Type your message..." maxlength="1000" />
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-paper-plane"></i>
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header">
+                    <h6 class="mb-0">
+                        <i class="fas fa-info-circle"></i> Ride Information
+                    </h6>
+                </div>
+                <div class="card-body">
+                    @if (ride != null)
+                    {
+                        <p class="mb-2">
+                            <strong>Route:</strong><br>
+                            @ride.StartLocation → @ride.EndLocation
+                        </p>
+                        <p class="mb-2">
+                            <strong>Date & Time:</strong><br>
+                            @ride.StartDateTime.ToString("MMM dd, yyyy at HH:mm")
+                        </p>
+                        <p class="mb-2">
+                            <strong>Driver:</strong><br>
+                            @ride.Driver.FullName
+                        </p>
+                        <p class="mb-2">
+                            <strong>Price per Seat:</strong><br>
+                            $@ride.PricePerSeat
+                        </p>
+                        <p class="mb-0">
+                            <strong>Available Seats:</strong><br>
+                            @ride.AvailableSeats
+                        </p>
+                    }
+                </div>
+            </div>
+
+            <div class="card mt-3">
+                <div class="card-header">
+                    <h6 class="mb-0">
+                        <i class="fas fa-users"></i> Participants
+                    </h6>
+                </div>
+                <div class="card-body">
+                    @if (ride != null)
+                    {
+                        <div class="mb-2">
+                            <i class="fas fa-user-tie text-primary"></i>
+                            <strong>@ride.Driver.FullName</strong> (Driver)
+                        </div>
+                        
+                        @if (ride.Bookings != null)
+                        {
+                            @foreach (var booking in ride.Bookings.Where(b => b.Status == "Confirmed"))
+                            {
+                                <div class="mb-2">
+                                    <i class="fas fa-user text-success"></i>
+                                    @booking.Passenger.FullName (@booking.SeatsBooked seat@(booking.SeatsBooked > 1 ? "s" : ""))
+                                </div>
+                            }
+                        }
+                    }
+                </div>
+            </div>
+
+            <div class="card mt-3">
+                <div class="card-body text-center">
+                    <a asp-controller="Ride" asp-action="Details" asp-route-id="@ride?.RideId" 
+                       class="btn btn-outline-primary btn-sm">
+                        <i class="fas fa-eye"></i> View Ride Details
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.message {
+    margin-bottom: 15px;
+}
+
+.message-sent {
+    text-align: right;
+}
+
+.message-received {
+    text-align: left;
+}
+
+.message-content {
+    display: inline-block;
+    max-width: 70%;
+    padding: 10px 15px;
+    border-radius: 18px;
+    word-wrap: break-word;
+}
+
+.message-sent .message-content {
+    background-color: #007bff;
+    color: white;
+}
+
+.message-received .message-content {
+    background-color: #f8f9fa;
+    color: #333;
+    border: 1px solid #dee2e6;
+}
+
+.message-header {
+    font-size: 0.8em;
+    margin-bottom: 5px;
+    opacity: 0.8;
+}
+
+.message-text {
+    margin: 0;
+}
+</style>
+
+@section Scripts {
+    <script src="https://kit.fontawesome.com/your-fontawesome-kit.js" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/6.0.1/signalr.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const chatForm = document.getElementById('chatForm');
+            const messageInput = document.getElementById('messageInput');
+            const chatMessages = document.getElementById('chatMessages');
+            const rideId = document.getElementById('rideId').value;
+
+            // TODO: Implement SignalR connection for real-time chat
+            // This is a placeholder for the SignalR implementation
+            
+            chatForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                const message = messageInput.value.trim();
+                if (message) {
+                    // TODO: Send message via SignalR
+                    addMessageToChat(message, '@User.Identity.Name', true);
+                    messageInput.value = '';
+                }
+            });
+
+            function addMessageToChat(text, senderName, isSent) {
+                const messageDiv = document.createElement('div');
+                messageDiv.className = `message ${isSent ? 'message-sent' : 'message-received'}`;
+                
+                const now = new Date();
+                const timeString = now.toLocaleTimeString('en-US', { 
+                    hour: '2-digit', 
+                    minute: '2-digit' 
+                });
+                
+                messageDiv.innerHTML = `
+                    <div class="message-content">
+                        <div class="message-header">
+                            <strong>${senderName}</strong>
+                            <small class="text-muted">${timeString}</small>
+                        </div>
+                        <div class="message-text">${text}</div>
+                    </div>
+                `;
+                
+                chatMessages.appendChild(messageDiv);
+                chatMessages.scrollTop = chatMessages.scrollHeight;
+            }
+
+            // Auto-scroll to bottom
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        });
+    </script>
+}

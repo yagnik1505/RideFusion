@@ -1,0 +1,93 @@
+@model IEnumerable<RideFusion.Models.Booking>
+@{
+    ViewData["Title"] = "Manage Bookings";
+}
+
+<div class="container">
+    <div class="row mb-4">
+        <div class="col-12">
+            <h2><i class="fas fa-bookmark"></i> Manage Bookings</h2>
+            <p class="text-muted">View and monitor all booking activities</p>
+        </div>
+    </div>
+
+    @if (Model != null && Model.Any())
+    {
+        <div class="card">
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Passenger</th>
+                                <th>Driver</th>
+                                <th>Route</th>
+                                <th>Date & Time</th>
+                                <th>Seats</th>
+                                <th>Status</th>
+                                <th>Verified</th>
+                                <th>Total Cost</th>
+                                <th>Booked On</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var booking in Model)
+                            {
+                                <tr>
+                                    <td>@booking.Passenger.FullName</td>
+                                    <td>@booking.Ride.Driver.FullName</td>
+                                    <td>
+                                        @booking.Ride.StartLocation → @booking.Ride.EndLocation
+                                    </td>
+                                    <td>
+                                        @booking.Ride.StartDateTime.ToString("MMM dd, yyyy")<br>
+                                        <small class="text-muted">@booking.Ride.StartDateTime.ToString("HH:mm")</small>
+                                    </td>
+                                    <td>@booking.SeatsBooked</td>
+                                    <td>
+                                        <span class="badge @(booking.Status switch {
+                                            "Confirmed" => "bg-success",
+                                            "Pending" => "bg-warning",
+                                            "Cancelled" => "bg-danger",
+                                            _ => "bg-secondary"
+                                        })">@booking.Status</span>
+                                    </td>
+                                    <td>
+                                        @if (booking.IsVerified)
+                                        {
+                                            <span class="badge bg-success">
+                                                <i class="fas fa-check"></i> Yes
+                                            </span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-warning">
+                                                <i class="fas fa-clock"></i> No
+                                            </span>
+                                        }
+                                    </td>
+                                    <td>$@(booking.Ride.PricePerSeat * booking.SeatsBooked)</td>
+                                    <td>
+                                        @booking.CreatedAt.ToString("MMM dd, yyyy")<br>
+                                        <small class="text-muted">@booking.CreatedAt.ToString("HH:mm")</small>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="text-center py-5">
+            <i class="fas fa-bookmark fa-5x text-muted mb-4"></i>
+            <h3>No bookings found</h3>
+        </div>
+    }
+</div>
+
+@section Scripts {
+    <script src="https://kit.fontawesome.com/your-fontawesome-kit.js" crossorigin="anonymous"></script>
+}

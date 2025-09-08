@@ -1,0 +1,106 @@
+@model IEnumerable<RideFusion.Models.Ride>
+@{
+    ViewData["Title"] = "Manage Rides";
+}
+
+<div class="container">
+    <div class="row mb-4">
+        <div class="col-12">
+            <h2><i class="fas fa-car"></i> Manage Rides</h2>
+            <p class="text-muted">View and manage all rides on the platform</p>
+        </div>
+    </div>
+
+    @if (Model != null && Model.Any())
+    {
+        <div class="row">
+            @foreach (var ride in Model)
+            {
+                <div class="col-md-6 col-lg-4 mb-4">
+                    <div class="card h-100">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                <h6 class="card-title">
+                                    <i class="fas fa-map-marker-alt text-primary"></i>
+                                    @ride.StartLocation
+                                    <i class="fas fa-arrow-right mx-1"></i>
+                                    <i class="fas fa-map-marker-alt text-success"></i>
+                                    @ride.EndLocation
+                                </h6>
+                                <span class="badge @(ride.AvailableSeats > 0 ? "bg-success" : "bg-danger")">
+                                    @ride.AvailableSeats seats left
+                                </span>
+                            </div>
+                            
+                            <p class="card-text">
+                                <small class="text-muted">
+                                    <i class="fas fa-calendar"></i> @ride.StartDateTime.ToString("MMM dd, yyyy")<br>
+                                    <i class="fas fa-clock"></i> @ride.StartDateTime.ToString("HH:mm")<br>
+                                    <i class="fas fa-user"></i> Driver: @ride.Driver.FullName<br>
+                                    <i class="fas fa-dollar-sign"></i> $@ride.PricePerSeat per seat
+                                </small>
+                            </p>
+
+                            @if (ride.Bookings != null && ride.Bookings.Any())
+                            {
+                                <div class="mb-3">
+                                    <h6 class="text-muted">Passengers (@ride.Bookings.Count):</h6>
+                                    <ul class="list-unstyled mb-0">
+                                        @foreach (var booking in ride.Bookings.Take(3))
+                                        {
+                                            <li class="mb-1">
+                                                <i class="fas fa-user text-success"></i>
+                                                @booking.Passenger.FullName (@booking.SeatsBooked seat@(booking.SeatsBooked > 1 ? "s" : ""))
+                                                <span class="badge @(booking.Status switch {
+                                                    "Confirmed" => "bg-success",
+                                                    "Pending" => "bg-warning",
+                                                    "Cancelled" => "bg-danger",
+                                                    _ => "bg-secondary"
+                                                })">@booking.Status</span>
+                                            </li>
+                                        }
+                                        @if (ride.Bookings.Count > 3)
+                                        {
+                                            <li class="text-muted">... and @(ride.Bookings.Count - 3) more</li>
+                                        }
+                                    </ul>
+                                </div>
+                            }
+
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h5 class="text-success mb-0">$@ride.PricePerSeat</h5>
+                                    <small class="text-muted">per seat</small>
+                                </div>
+                                <div class="btn-group" role="group">
+                                    <a asp-controller="Ride" asp-action="Details" asp-route-id="@ride.RideId" 
+                                       class="btn btn-outline-primary btn-sm">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    <form asp-action="RemoveRide" method="post" class="d-inline">
+                                        <input type="hidden" name="rideId" value="@ride.RideId" />
+                                        <button type="submit" class="btn btn-outline-danger btn-sm" 
+                                                onclick="return confirm('Are you sure you want to remove this ride?')">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+    else
+    {
+        <div class="text-center py-5">
+            <i class="fas fa-car fa-5x text-muted mb-4"></i>
+            <h3>No rides found</h3>
+        </div>
+    }
+</div>
+
+@section Scripts {
+    <script src="https://kit.fontawesome.com/your-fontawesome-kit.js" crossorigin="anonymous"></script>
+}

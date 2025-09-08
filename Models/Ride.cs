@@ -9,14 +9,14 @@ namespace RideFusion.Models
         public int RideId { get; set; }
 
         [Required]
-        public string DriverId { get; set; }
-        public ApplicationUser Driver { get; set; }
+        public required string DriverId { get; set; }
+        public required ApplicationUser Driver { get; set; }
 
         [Required, MaxLength(200)]
-        public string StartLocation { get; set; }
+        public required string StartLocation { get; set; }
 
         [Required, MaxLength(200)]
-        public string EndLocation { get; set; }
+        public required string EndLocation { get; set; }
 
         public DateTime StartDateTime { get; set; }
 
@@ -31,6 +31,6 @@ namespace RideFusion.Models
         public int? EstimatedMinutes { get; set; }
 
         // Navigation
-        public ICollection<Booking> Bookings { get; set; }
+        public ICollection<Booking> Bookings { get; set; } = new List<Booking>();
     }
 }

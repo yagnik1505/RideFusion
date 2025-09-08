@@ -1,0 +1,128 @@
+@model IEnumerable<RideFusion.Models.Booking>
+@{
+    ViewData["Title"] = "My Bookings";
+}
+
+<div class="container">
+    <div class="row mb-4">
+        <div class="col-12">
+            <h2><i class="fas fa-bookmark"></i> My Bookings</h2>
+            <p class="text-muted">Manage your ride bookings and track their status</p>
+        </div>
+    </div>
+
+    @if (Model != null && Model.Any())
+    {
+        <div class="row">
+            @foreach (var booking in Model)
+            {
+                <div class="col-md-6 col-lg-4 mb-4">
+                    <div class="card h-100">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                <h6 class="card-title">
+                                    <i class="fas fa-map-marker-alt text-primary"></i>
+                                    @booking.Ride.StartLocation
+                                    <i class="fas fa-arrow-right mx-1"></i>
+                                    <i class="fas fa-map-marker-alt text-success"></i>
+                                    @booking.Ride.EndLocation
+                                </h6>
+                                <span class="badge @(booking.Status switch {
+                                    "Confirmed" => "bg-success",
+                                    "Pending" => "bg-warning",
+                                    "Cancelled" => "bg-danger",
+                                    _ => "bg-secondary"
+                                })">
+                                    @booking.Status
+                                </span>
+                            </div>
+                            
+                            <p class="card-text">
+                                <small class="text-muted">
+                                    <i class="fas fa-calendar"></i> @booking.Ride.StartDateTime.ToString("MMM dd, yyyy")<br>
+                                    <i class="fas fa-clock"></i> @booking.Ride.StartDateTime.ToString("HH:mm")<br>
+                                    <i class="fas fa-user"></i> Driver: @booking.Ride.Driver.FullName<br>
+                                    <i class="fas fa-users"></i> Seats: @booking.SeatsBooked
+                                </small>
+                            </p>
+
+                            <div class="mb-3">
+                                <div class="d-flex justify-content-between">
+                                    <span class="text-muted">Total Cost:</span>
+                                    <strong class="text-success">$@(booking.Ride.PricePerSeat * booking.SeatsBooked)</strong>
+                                </div>
+                            </div>
+
+                            @if (booking.Status == "Pending" && !booking.IsVerified)
+                            {
+                                <div class="alert alert-warning alert-sm mb-3">
+                                    <i class="fas fa-exclamation-triangle"></i>
+                                    <small>OTP verification required</small>
+                                </div>
+                            }
+
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    @if (booking.IsVerified)
+                                    {
+                                        <span class="badge bg-success">
+                                            <i class="fas fa-check"></i> Verified
+                                        </span>
+                                    }
+                                    else if (booking.Status == "Pending")
+                                    {
+                                        <span class="badge bg-warning">
+                                            <i class="fas fa-clock"></i> Pending Verification
+                                        </span>
+                                    }
+                                </div>
+                                <div class="btn-group" role="group">
+                                    @if (booking.Status == "Pending" && !booking.IsVerified)
+                                    {
+                                        <a asp-action="VerifyOTP" asp-route-bookingId="@booking.BookingId" 
+                                           class="btn btn-success btn-sm">
+                                            <i class="fas fa-key"></i> Verify OTP
+                                        </a>
+                                    }
+                                    <a asp-controller="Ride" asp-action="Details" asp-route-id="@booking.RideId" 
+                                       class="btn btn-outline-primary btn-sm">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    @if (booking.Status == "Confirmed" || booking.Status == "Pending")
+                                    {
+                                        <form asp-action="Cancel" method="post" class="d-inline">
+                                            <input type="hidden" name="bookingId" value="@booking.BookingId" />
+                                            <button type="submit" class="btn btn-outline-danger btn-sm" 
+                                                    onclick="return confirm('Are you sure you want to cancel this booking?')">
+                                                <i class="fas fa-times"></i>
+                                            </button>
+                                        </form>
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+    else
+    {
+        <div class="row">
+            <div class="col-12">
+                <div class="text-center py-5">
+                    <i class="fas fa-bookmark fa-5x text-muted mb-4"></i>
+                    <h3>No bookings yet</h3>
+                    <p class="text-muted">Start exploring available rides and book your first journey.</p>
+                    <a asp-controller="Ride" asp-action="Search" class="btn btn-primary">
+                        <i class="fas fa-search"></i> Find Rides
+                    </a>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+@section Scripts {
+    <script src="https://kit.fontawesome.com/your-fontawesome-kit.js" crossorigin="anonymous"></script>
+}

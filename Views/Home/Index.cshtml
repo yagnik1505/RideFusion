@@ -1,8 +1,167 @@
 ﻿@{
-    ViewData["Title"] = "Home Page";
+    ViewData["Title"] = "RideFusion - Carpool & Ride-Sharing";
 }
 
-<div class="text-center">
-    <h1 class="display-4">Welcome</h1>
-    <p>Learn about <a href="https://learn.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
+<div class="hero-section bg-primary text-white py-5 mb-5">
+    <div class="container">
+        <div class="row align-items-center">
+            <div class="col-lg-6">
+                <h1 class="display-4 fw-bold mb-4">Share Rides, Save Money, Save Planet</h1>
+                <p class="lead mb-4">Connect with fellow commuters and make your daily travel more affordable and eco-friendly.</p>
+                <div class="d-flex gap-3">
+                    <a asp-controller="Ride" asp-action="Search" class="btn btn-light btn-lg">Find a Ride</a>
+                    <a asp-controller="Ride" asp-action="Create" class="btn btn-outline-light btn-lg">Offer a Ride</a>
+                </div>
+            </div>
+            <div class="col-lg-6">
+                <div class="text-center">
+                    <i class="fas fa-car-side fa-10x opacity-75"></i>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
+
+<div class="container">
+    <!-- Search Section -->
+    <div class="row mb-5">
+        <div class="col-12">
+            <div class="card shadow">
+                <div class="card-body">
+                    <h3 class="card-title text-center mb-4">Find Your Perfect Ride</h3>
+                    <form asp-controller="Ride" asp-action="Search" method="get" class="row g-3">
+                        <div class="col-md-4">
+                            <label for="startLocation" class="form-label">From</label>
+                            <input type="text" class="form-control" id="startLocation" name="startLocation" placeholder="Enter pickup location">
+                        </div>
+                        <div class="col-md-4">
+                            <label for="endLocation" class="form-label">To</label>
+                            <input type="text" class="form-control" id="endLocation" name="endLocation" placeholder="Enter destination">
+                        </div>
+                        <div class="col-md-3">
+                            <label for="date" class="form-label">Date</label>
+                            <input type="date" class="form-control" id="date" name="date" value="@DateTime.Now.ToString("yyyy-MM-dd")">
+                        </div>
+                        <div class="col-md-1 d-flex align-items-end">
+                            <button type="submit" class="btn btn-primary w-100">
+                                <i class="fas fa-search"></i>
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Features Section -->
+    <div class="row mb-5">
+        <div class="col-12">
+            <h2 class="text-center mb-5">Why Choose RideFusion?</h2>
+        </div>
+        <div class="col-md-4 mb-4">
+            <div class="card h-100 text-center">
+                <div class="card-body">
+                    <i class="fas fa-dollar-sign fa-3x text-success mb-3"></i>
+                    <h5 class="card-title">Save Money</h5>
+                    <p class="card-text">Split fuel costs and reduce your transportation expenses by up to 70%.</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4 mb-4">
+            <div class="card h-100 text-center">
+                <div class="card-body">
+                    <i class="fas fa-leaf fa-3x text-success mb-3"></i>
+                    <h5 class="card-title">Eco-Friendly</h5>
+                    <p class="card-text">Reduce carbon footprint by sharing rides and contributing to a greener environment.</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4 mb-4">
+            <div class="card h-100 text-center">
+                <div class="card-body">
+                    <i class="fas fa-shield-alt fa-3x text-primary mb-3"></i>
+                    <h5 class="card-title">Secure & Verified</h5>
+                    <p class="card-text">OTP verification ensures secure bookings and verified users for your peace of mind.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Rides Section -->
+    @if (ViewBag.RecentRides != null && ((List<RideFusion.Models.Ride>)ViewBag.RecentRides).Any())
+    {
+        <div class="row mb-5">
+            <div class="col-12">
+                <h2 class="text-center mb-4">Available Rides</h2>
+                <div class="row">
+                    @foreach (var ride in (List<RideFusion.Models.Ride>)ViewBag.RecentRides)
+                    {
+                        <div class="col-md-6 col-lg-4 mb-4">
+                            <div class="card h-100">
+                                <div class="card-body">
+                                    <div class="d-flex justify-content-between align-items-start mb-2">
+                                        <h6 class="card-title">@ride.StartLocation → @ride.EndLocation</h6>
+                                        <span class="badge bg-primary">@ride.AvailableSeats seats left</span>
+                                    </div>
+                                    <p class="card-text">
+                                        <small class="text-muted">
+                                            <i class="fas fa-calendar"></i> @ride.StartDateTime.ToString("MMM dd, yyyy")<br>
+                                            <i class="fas fa-clock"></i> @ride.StartDateTime.ToString("HH:mm")<br>
+                                            <i class="fas fa-user"></i> @ride.Driver.FullName
+                                        </small>
+                                    </p>
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <h5 class="text-success mb-0">$@ride.PricePerSeat</h5>
+                                        <a asp-controller="Ride" asp-action="Details" asp-route-id="@ride.RideId" class="btn btn-sm btn-outline-primary">View Details</a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+                <div class="text-center">
+                    <a asp-controller="Ride" asp-action="Search" class="btn btn-primary">View All Rides</a>
+                </div>
+            </div>
+        </div>
+    }
+
+    <!-- How It Works Section -->
+    <div class="row mb-5">
+        <div class="col-12">
+            <h2 class="text-center mb-5">How It Works</h2>
+        </div>
+        <div class="col-md-3 text-center mb-4">
+            <div class="step-number bg-primary text-white rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 60px; height: 60px;">
+                <span class="fw-bold">1</span>
+            </div>
+            <h5>Search or Post</h5>
+            <p>Find available rides or post your own ride offer.</p>
+        </div>
+        <div class="col-md-3 text-center mb-4">
+            <div class="step-number bg-primary text-white rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 60px; height: 60px;">
+                <span class="fw-bold">2</span>
+            </div>
+            <h5>Book & Verify</h5>
+            <p>Book your seat and verify with OTP for security.</p>
+        </div>
+        <div class="col-md-3 text-center mb-4">
+            <div class="step-number bg-primary text-white rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 60px; height: 60px;">
+                <span class="fw-bold">3</span>
+            </div>
+            <h5>Connect & Chat</h5>
+            <p>Communicate with your driver or passengers.</p>
+        </div>
+        <div class="col-md-3 text-center mb-4">
+            <div class="step-number bg-primary text-white rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 60px; height: 60px;">
+                <span class="fw-bold">4</span>
+            </div>
+            <h5>Enjoy the Ride</h5>
+            <p>Travel together and save money while helping the environment.</p>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://kit.fontawesome.com/your-fontawesome-kit.js" crossorigin="anonymous"></script>
+}
