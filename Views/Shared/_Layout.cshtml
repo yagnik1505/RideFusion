@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="utf-8" />
@@ -10,6 +10,10 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
 </head>
 <body>
+    @using Microsoft.AspNetCore.Identity
+    @using RideFusion.Models
+    @inject SignInManager<ApplicationUser> SignInManager
+    @inject UserManager<ApplicationUser> UserManager
     <header>
         <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3">
             <div class="container-fluid">
@@ -45,6 +49,25 @@
         </nav>
     </header>
     <div class="container">
+        @if (SignInManager.IsSignedIn(User))
+        {
+            var currentUser = await UserManager.GetUserAsync(User);
+            if (currentUser != null)
+            {
+                var roles = await UserManager.GetRolesAsync(currentUser);
+                bool isDriver = roles.Contains("Driver");
+                bool incomplete = string.IsNullOrWhiteSpace(currentUser.FullName) || (isDriver && string.IsNullOrWhiteSpace(currentUser.VehicleDetails));
+                if (incomplete)
+                {
+                    <div class="alert alert-warning d-flex align-items-center mt-2" role="alert">
+                        <i class="fa fa-exclamation-triangle me-2"></i>
+                        <div>
+                            Your profile is incomplete. Please <a class="alert-link" asp-area="" asp-controller="Profile" asp-action="Edit">complete your profile</a> to use ride features.
+                        </div>
+                    </div>
+                }
+            }
+        }
         <main role="main" class="pb-3">
             @RenderBody()
         </main>

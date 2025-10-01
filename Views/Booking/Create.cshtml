@@ -35,6 +35,23 @@
                             </p>
                         </div>
 
+                        <div class="card mb-4">
+                            <div class="card-body">
+                                <h6 class="card-title"><i class="fas fa-money-bill-wave me-1"></i> Online Payment</h6>
+                                @if (!string.IsNullOrWhiteSpace(ride.Driver?.UpiId))
+                                {
+                                    <div class="alert alert-success mb-2">
+                                        <strong>Driver UPI ID:</strong> <span class="fw-semibold">@ride.Driver.UpiId</span>
+                                    </div>
+                                    <small class="text-muted">Use this UPI ID to pay the driver directly after booking/ride completion as agreed.</small>
+                                }
+                                else
+                                {
+                                    <small class="text-muted">UPI ID not provided.</small>
+                                }
+                            </div>
+                        </div>
+
                         <form asp-action="Create" method="post">
                             <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
                             

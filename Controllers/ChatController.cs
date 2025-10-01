@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authorization;
 using RideFusion.Models;
 using RideFusion.Data;
 using Microsoft.EntityFrameworkCore;
+using RideFusion.Filters;
 
 namespace RideFusion.Controllers
 {
@@ -17,6 +18,7 @@ namespace RideFusion.Controllers
 
         // GET: Chat/Index
         [Authorize]
+        [ProfileCompleted]
         public async Task<IActionResult> Index(int rideId)
         {
             var ride = await _context.Rides
@@ -53,6 +55,7 @@ namespace RideFusion.Controllers
 
         // GET: Chat/MyChats
         [Authorize]
+        [ProfileCompleted]
         public async Task<IActionResult> MyChats()
         {
             var userId = User.Identity.Name;

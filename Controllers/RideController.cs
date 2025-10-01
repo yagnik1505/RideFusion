@@ -3,6 +3,8 @@ using Microsoft.AspNetCore.Authorization;
 using RideFusion.Models;
 using RideFusion.Data;
 using Microsoft.EntityFrameworkCore;
+using RideFusion.Filters;
+using System.Security.Claims;
 
 namespace RideFusion.Controllers
 {
@@ -18,19 +20,25 @@ namespace RideFusion.Controllers
         // GET: Ride/Search
         public async Task<IActionResult> Search(string? startLocation, string? endLocation, DateTime? date)
         {
+            ViewBag.StartLocation = startLocation;
+            ViewBag.EndLocation = endLocation;
+            ViewBag.Date = date;
+
             var rides = _context.Rides
                 .Include(r => r.Driver)
                 .Include(r => r.Bookings)
-                .Where(r => r.AvailableSeats > 0);
+                .Where(r => r.AvailableSeats > 0 && r.StartDateTime >= DateTime.Now.AddMinutes(-30));
 
             if (!string.IsNullOrEmpty(startLocation))
             {
-                rides = rides.Where(r => r.StartLocation.Contains(startLocation));
+                var from = $"%{startLocation}%";
+                rides = rides.Where(r => EF.Functions.Like(r.StartLocation, from));
             }
 
             if (!string.IsNullOrEmpty(endLocation))
             {
-                rides = rides.Where(r => r.EndLocation.Contains(endLocation));
+                var to = $"%{endLocation}%";
+                rides = rides.Where(r => EF.Functions.Like(r.EndLocation, to));
             }
 
             if (date.HasValue)
@@ -38,7 +46,9 @@ namespace RideFusion.Controllers
                 rides = rides.Where(r => r.StartDateTime.Date == date.Value.Date);
             }
 
-            var rideList = await rides.ToListAsync();
+            var rideList = await rides
+                .OrderBy(r => r.StartDateTime)
+                .ToListAsync();
             return View(rideList);
         }
 
@@ -64,7 +74,8 @@ namespace RideFusion.Controllers
         }
 
         // GET: Ride/Create
-        [Authorize]
+        [Authorize(Roles = "Driver")]
+        [ProfileCompleted]
         public IActionResult Create()
         {
             return View();
@@ -73,12 +84,14 @@ namespace RideFusion.Controllers
         // POST: Ride/Create
         [HttpPost]
         [ValidateAntiForgeryToken]
-        [Authorize]
+        [Authorize(Roles = "Driver")]
+        [ProfileCompleted]
         public async Task<IActionResult> Create([Bind("StartLocation,EndLocation,StartDateTime,AvailableSeats,PricePerSeat,DistanceKm,EstimatedMinutes")] Ride ride)
         {
             if (ModelState.IsValid)
             {
-                ride.DriverId = User.Identity.Name; // This will be updated when we implement proper authentication
+                var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+                ride.DriverId = userId;
                 _context.Add(ride);
                 await _context.SaveChangesAsync();
                 return RedirectToAction(nameof(MyRides));
@@ -87,19 +100,22 @@ namespace RideFusion.Controllers
         }
 
         // GET: Ride/MyRides
-        [Authorize]
+        [Authorize(Roles = "Driver")]
+        [ProfileCompleted]
         public async Task<IActionResult> MyRides()
         {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
             var rides = await _context.Rides
                 .Include(r => r.Bookings)
-                .Where(r => r.DriverId == User.Identity.Name)
+                .Where(r => r.DriverId == userId)
                 .ToListAsync();
 
             return View(rides);
         }
 
         // GET: Ride/Edit/5
-        [Authorize]
+        [Authorize(Roles = "Driver")]
+        [ProfileCompleted]
         public async Task<IActionResult> Edit(int? id)
         {
             if (id == null)
@@ -108,7 +124,8 @@ namespace RideFusion.Controllers
             }
 
             var ride = await _context.Rides.FindAsync(id);
-            if (ride == null || ride.DriverId != User.Identity.Name)
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (ride == null || ride.DriverId != userId)
             {
                 return NotFound();
             }
@@ -119,7 +136,8 @@ namespace RideFusion.Controllers
         // POST: Ride/Edit/5
         [HttpPost]
         [ValidateAntiForgeryToken]
-        [Authorize]
+        [Authorize(Roles = "Driver")]
+        [ProfileCompleted]
         public async Task<IActionResult> Edit(int id, [Bind("RideId,StartLocation,EndLocation,StartDateTime,AvailableSeats,PricePerSeat,DistanceKm,EstimatedMinutes")] Ride ride)
         {
             if (id != ride.RideId)
@@ -131,6 +149,9 @@ namespace RideFusion.Controllers
             {
                 try
                 {
+                    // Ensure the ride remains associated with the current driver
+                    var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+                    ride.DriverId = userId;
                     _context.Update(ride);
                     await _context.SaveChangesAsync();
                 }
@@ -151,7 +172,8 @@ namespace RideFusion.Controllers
         }
 
         // GET: Ride/Delete/5
-        [Authorize]
+        [Authorize(Roles = "Driver")]
+        [ProfileCompleted]
         public async Task<IActionResult> Delete(int? id)
         {
             if (id == null)
@@ -163,7 +185,8 @@ namespace RideFusion.Controllers
                 .Include(r => r.Driver)
                 .FirstOrDefaultAsync(m => m.RideId == id);
 
-            if (ride == null || ride.DriverId != User.Identity.Name)
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (ride == null || ride.DriverId != userId)
             {
                 return NotFound();
             }
@@ -174,11 +197,13 @@ namespace RideFusion.Controllers
         // POST: Ride/Delete/5
         [HttpPost, ActionName("Delete")]
         [ValidateAntiForgeryToken]
-        [Authorize]
+        [Authorize(Roles = "Driver")]
+        [ProfileCompleted]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
             var ride = await _context.Rides.FindAsync(id);
-            if (ride != null && ride.DriverId == User.Identity.Name)
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (ride != null && ride.DriverId == userId)
             {
                 _context.Rides.Remove(ride);
             }

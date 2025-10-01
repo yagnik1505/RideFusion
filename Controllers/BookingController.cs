@@ -4,6 +4,7 @@ using RideFusion.Models;
 using RideFusion.Data;
 using Microsoft.EntityFrameworkCore;
 using System.Security.Cryptography;
+using RideFusion.Filters;
 
 namespace RideFusion.Controllers
 {
@@ -18,6 +19,7 @@ namespace RideFusion.Controllers
 
         // GET: Booking/Create
         [Authorize]
+        [ProfileCompleted]
         public async Task<IActionResult> Create(int rideId)
         {
             var ride = await _context.Rides
@@ -37,6 +39,7 @@ namespace RideFusion.Controllers
         [HttpPost]
         [ValidateAntiForgeryToken]
         [Authorize]
+        [ProfileCompleted]
         public async Task<IActionResult> Create([Bind("RideId,SeatsBooked")] Booking booking)
         {
             if (ModelState.IsValid)
@@ -65,6 +68,7 @@ namespace RideFusion.Controllers
 
         // GET: Booking/VerifyOTP
         [Authorize]
+        [ProfileCompleted]
         public async Task<IActionResult> VerifyOTP(int bookingId)
         {
             var booking = await _context.Bookings
@@ -84,6 +88,7 @@ namespace RideFusion.Controllers
         [HttpPost]
         [ValidateAntiForgeryToken]
         [Authorize]
+        [ProfileCompleted]
         public async Task<IActionResult> VerifyOTP(int bookingId, string otp)
         {
             var booking = await _context.Bookings
@@ -118,6 +123,7 @@ namespace RideFusion.Controllers
 
         // GET: Booking/MyBookings
         [Authorize]
+        [ProfileCompleted]
         public async Task<IActionResult> MyBookings()
         {
             var bookings = await _context.Bookings
@@ -132,6 +138,7 @@ namespace RideFusion.Controllers
 
         // GET: Booking/DriverBookings
         [Authorize]
+        [ProfileCompleted]
         public async Task<IActionResult> DriverBookings(int rideId)
         {
             var bookings = await _context.Bookings
@@ -147,6 +154,7 @@ namespace RideFusion.Controllers
         [HttpPost]
         [ValidateAntiForgeryToken]
         [Authorize]
+        [ProfileCompleted]
         public async Task<IActionResult> Approve(int bookingId)
         {
             var booking = await _context.Bookings
@@ -166,6 +174,7 @@ namespace RideFusion.Controllers
         [HttpPost]
         [ValidateAntiForgeryToken]
         [Authorize]
+        [ProfileCompleted]
         public async Task<IActionResult> Reject(int bookingId)
         {
             var booking = await _context.Bookings
@@ -186,6 +195,7 @@ namespace RideFusion.Controllers
         [HttpPost]
         [ValidateAntiForgeryToken]
         [Authorize]
+        [ProfileCompleted]
         public async Task<IActionResult> Cancel(int bookingId)
         {
             var booking = await _context.Bookings

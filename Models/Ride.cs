@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 
@@ -10,7 +10,7 @@ namespace RideFusion.Models
 
         [Required]
         public required string DriverId { get; set; }
-        public required ApplicationUser Driver { get; set; }
+        public ApplicationUser? Driver { get; set; }
 
         [Required, MaxLength(200)]
         public required string StartLocation { get; set; }

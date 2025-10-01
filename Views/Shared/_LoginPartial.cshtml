@@ -1,4 +1,4 @@
-﻿@using Microsoft.AspNetCore.Identity
+@using Microsoft.AspNetCore.Identity
 @using RideFusion.Models
 @inject SignInManager<ApplicationUser> SignInManager
 @inject UserManager<ApplicationUser> UserManager
@@ -6,9 +6,24 @@
 <ul class="navbar-nav">
 @if (SignInManager.IsSignedIn(User))
 {
+    var currentUser = await UserManager.GetUserAsync(User);
+    var roles = currentUser != null ? await UserManager.GetRolesAsync(currentUser) : new List<string>();
+    bool isDriver = roles.Contains("Driver");
+    bool incomplete = currentUser != null && (string.IsNullOrWhiteSpace(currentUser.FullName) || (isDriver && string.IsNullOrWhiteSpace(currentUser.VehicleDetails)));
     <li class="nav-item">
         <a  class="nav-link text-dark" asp-area="Identity" asp-page="/Account/Manage/Index" title="Manage">Hello @User.Identity?.Name!</a>
     </li>
+    <li class="nav-item">
+        <a class="nav-link text-dark" asp-area="" asp-controller="Profile" asp-action="Edit">Profile</a>
+    </li>
+    @if (incomplete)
+    {
+        <li class="nav-item">
+            <a class="nav-link text-warning fw-semibold" asp-area="" asp-controller="Profile" asp-action="Edit">
+                <i class="fa fa-exclamation-triangle me-1"></i>Complete Profile
+            </a>
+        </li>
+    }
     <li class="nav-item">
         <form  class="form-inline" asp-area="Identity" asp-page="/Account/Logout" asp-route-returnUrl="@Url.Action("Index", "Home", new { area = "" })">
             <button  type="submit" class="nav-link btn btn-link text-dark">Logout</button>
