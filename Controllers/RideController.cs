@@ -1,20 +1,24 @@
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
-using RideFusion.Models;
-using RideFusion.Data;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using RideFusion.Filters;
-using System.Security.Claims;
+using RideFusion.Data;
+using RideFusion.Models;
+using RideFusion.Filters; // Added for [ProfileCompleted]
+using System.Security.Claims; // Added for ClaimTypes and FindFirstValue
 
 namespace RideFusion.Controllers
 {
+    [Authorize]
     public class RideController : Controller
     {
         private readonly ApplicationDbContext _context;
+        private readonly UserManager<ApplicationUser> _userManager;
 
-        public RideController(ApplicationDbContext context)
+        public RideController(ApplicationDbContext context, UserManager<ApplicationUser> userManager)
         {
             _context = context;
+            _userManager = userManager;
         }
 
         // GET: Ride/Search
@@ -73,41 +77,74 @@ namespace RideFusion.Controllers
             return View(ride);
         }
 
-        // GET: Ride/Create
-        [Authorize(Roles = "Driver")]
-        [ProfileCompleted]
+        // GET: Ride/Create (Offer Ride)
+        [HttpGet]
         public IActionResult Create()
         {
-            return View();
+            var model = new Ride
+            {
+                // Satisfy required members with defaults for the form; real values are posted back
+                DriverId = _userManager.GetUserId(User) ?? string.Empty,
+                StartLocation = string.Empty,
+                EndLocation = string.Empty,
+                StartDateTime = DateTime.Now.AddHours(1), // sensible default
+                AvailableSeats = 1,
+                PricePerSeat = 0
+            };
+            return View(model);
         }
 
         // POST: Ride/Create
         [HttpPost]
         [ValidateAntiForgeryToken]
-        [Authorize(Roles = "Driver")]
-        [ProfileCompleted]
-        public async Task<IActionResult> Create([Bind("StartLocation,EndLocation,StartDateTime,AvailableSeats,PricePerSeat,DistanceKm,EstimatedMinutes")] Ride ride)
+        public async Task<IActionResult> Create(Ride ride)
         {
-            if (ModelState.IsValid)
+            try
             {
-                var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+                var userId = _userManager.GetUserId(User);
+                if (string.IsNullOrEmpty(userId))
+                {
+                    TempData["Error"] = "Unable to identify current user.";
+                    return View(ride);
+                }
+
+                // Ensure DriverId is set for validation
                 ride.DriverId = userId;
-                _context.Add(ride);
-                await _context.SaveChangesAsync();
+                
+                // Clear any DriverId validation errors since we set it server-side
+                ModelState.Remove("DriverId");
+
+                // Debug validation
+                if (!ModelState.IsValid)
+                {
+                    var errors = string.Join(" | ", ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage));
+                    TempData["Error"] = $"Validation failed: {errors}";
+                    return View(ride);
+                }
+
+                _context.Rides.Add(ride);
+                var result = await _context.SaveChangesAsync();
+                
+                TempData["SuccessMessage"] = $"Ride created successfully! Rows affected: {result}";
                 return RedirectToAction(nameof(MyRides));
             }
-            return View(ride);
+            catch (Exception ex)
+            {
+                TempData["Error"] = $"Error creating ride: {ex.Message}";
+                return View(ride);
+            }
         }
 
         // GET: Ride/MyRides
-        [Authorize(Roles = "Driver")]
-        [ProfileCompleted]
+        [HttpGet]
         public async Task<IActionResult> MyRides()
         {
-            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            var userId = _userManager.GetUserId(User);
             var rides = await _context.Rides
                 .Include(r => r.Bookings)
+                .ThenInclude(b => b.Passenger)
                 .Where(r => r.DriverId == userId)
+                .OrderByDescending(r => r.StartDateTime)
                 .ToListAsync();
 
             return View(rides);

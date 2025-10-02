@@ -15,9 +15,13 @@
                     {
                         <div class="alert alert-success">@TempData["SuccessMessage"]</div>
                     }
+                    @if (TempData["Error"] != null)
+                    {
+                        <div class="alert alert-danger">@TempData["Error"]</div>
+                    }
 
                     <form asp-action="Edit" method="post" novalidate>
-                        <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+                        <div asp-validation-summary="All" class="text-danger mb-3"></div>
 
                         <div class="row g-3">
                             <div class="col-md-6">
@@ -27,7 +31,7 @@
                             </div>
                             <div class="col-md-6">
                                 <label asp-for="PhoneNumber" class="form-label"></label>
-                                <input asp-for="PhoneNumber" class="form-control" />
+                                <input asp-for="PhoneNumber" class="form-control" type="tel" />
                                 <span asp-validation-for="PhoneNumber" class="text-danger"></span>
                             </div>
                             <div class="col-12">
@@ -50,72 +54,79 @@
 
                         <hr />
 
-                        @if (ViewBag.IsDriver == true)
-                        {
-                            <div class="row g-3">
-                                <div class="col-md-6">
-                                    <label asp-for="UpiId" class="form-label"></label>
-                                    <input asp-for="UpiId" class="form-control" placeholder="yourname@upi" />
-                                    <span class="form-text">Drivers must set UPI to accept online payments.</span>
-                                    <span asp-validation-for="UpiId" class="text-danger"></span>
-                                </div>
-                                <div class="col-md-6">
-                                    <div class="form-check mt-4">
-                                        <input asp-for="IsAvailable" class="form-check-input" />
-                                        <label asp-for="IsAvailable" class="form-check-label"></label>
-                                    </div>
-                                </div>
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label asp-for="UpiId" class="form-label"></label>
+                                <input asp-for="UpiId" class="form-control" placeholder="yourname@upi" />
+                                <span class="form-text">Drivers must set UPI to accept online payments.</span>
+                                <span asp-validation-for="UpiId" class="text-danger"></span>
                             </div>
-
-                            <hr />
-
-                            <div class="alert alert-info" role="alert">
-                                The following section is required for Drivers.
+                            <div class="col-md-6">
+                                <label for="IsAvailable" class="form-label">Availability Status</label>
+                                <select asp-for="IsAvailable" class="form-select">
+                                    <option value="">Not specified</option>
+                                    <option value="true">Available</option>
+                                    <option value="false">Unavailable</option>
+                                </select>
+                                <span asp-validation-for="IsAvailable" class="text-danger"></span>
                             </div>
+                        </div>
 
-                            <div class="row g-3">
-                                <div class="col-md-6">
-                                    <label asp-for="VehicleDetails" class="form-label"></label>
-                                    <input asp-for="VehicleDetails" class="form-control" />
-                                    <div class="form-text">Legacy combined field (optional if you use detailed fields).</div>
-                                    <span asp-validation-for="VehicleDetails" class="text-danger"></span>
-                                </div>
-                            </div>
+                        <hr />
 
-                            <div class="row g-3 mt-1">
-                                <div class="col-md-3">
-                                    <label asp-for="VehicleMake" class="form-label"></label>
-                                    <input asp-for="VehicleMake" class="form-control" />
-                                </div>
-                                <div class="col-md-3">
-                                    <label asp-for="VehicleModel" class="form-label"></label>
-                                    <input asp-for="VehicleModel" class="form-control" />
-                                </div>
-                                <div class="col-md-2">
-                                    <label asp-for="VehicleYear" class="form-label"></label>
-                                    <input asp-for="VehicleYear" class="form-control" />
-                                </div>
-                                <div class="col-md-2">
-                                    <label asp-for="VehicleColor" class="form-label"></label>
-                                    <input asp-for="VehicleColor" class="form-control" />
-                                </div>
-                                <div class="col-md-2">
-                                    <label asp-for="LicensePlate" class="form-label"></label>
-                                    <input asp-for="LicensePlate" class="form-control" />
-                                </div>
-                            </div>
+                        <div class="alert alert-info" role="alert">
+                            The following section is required for Drivers.
+                        </div>
 
-                            <div class="row g-3 mt-1">
-                                <div class="col-md-6">
-                                    <label asp-for="DriversLicenseNumber" class="form-label"></label>
-                                    <input asp-for="DriversLicenseNumber" class="form-control" />
-                                </div>
-                                <div class="col-md-6">
-                                    <label asp-for="DriversLicenseExpiry" class="form-label"></label>
-                                    <input asp-for="DriversLicenseExpiry" class="form-control" />
-                                </div>
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label asp-for="VehicleDetails" class="form-label"></label>
+                                <input asp-for="VehicleDetails" class="form-control" />
+                                <div class="form-text">Legacy combined field (optional if you use detailed fields).</div>
+                                <span asp-validation-for="VehicleDetails" class="text-danger"></span>
                             </div>
-                        }
+                        </div>
+
+                        <div class="row g-3 mt-1">
+                            <div class="col-md-3">
+                                <label asp-for="VehicleMake" class="form-label"></label>
+                                <input asp-for="VehicleMake" class="form-control" />
+                                <span asp-validation-for="VehicleMake" class="text-danger"></span>
+                            </div>
+                            <div class="col-md-3">
+                                <label asp-for="VehicleModel" class="form-label"></label>
+                                <input asp-for="VehicleModel" class="form-control" />
+                                <span asp-validation-for="VehicleModel" class="text-danger"></span>
+                            </div>
+                            <div class="col-md-2">
+                                <label asp-for="VehicleYear" class="form-label"></label>
+                                <input asp-for="VehicleYear" class="form-control" type="number" min="1900" max="2100" />
+                                <span asp-validation-for="VehicleYear" class="text-danger"></span>
+                            </div>
+                            <div class="col-md-2">
+                                <label asp-for="VehicleColor" class="form-label"></label>
+                                <input asp-for="VehicleColor" class="form-control" />
+                                <span asp-validation-for="VehicleColor" class="text-danger"></span>
+                            </div>
+                            <div class="col-md-2">
+                                <label asp-for="LicensePlate" class="form-label"></label>
+                                <input asp-for="LicensePlate" class="form-control" />
+                                <span asp-validation-for="LicensePlate" class="text-danger"></span>
+                            </div>
+                        </div>
+
+                        <div class="row g-3 mt-1">
+                            <div class="col-md-6">
+                                <label asp-for="DriversLicenseNumber" class="form-label"></label>
+                                <input asp-for="DriversLicenseNumber" class="form-control" />
+                                <span asp-validation-for="DriversLicenseNumber" class="text-danger"></span>
+                            </div>
+                            <div class="col-md-6">
+                                <label asp-for="DriversLicenseExpiry" class="form-label"></label>
+                                <input asp-for="DriversLicenseExpiry" class="form-control" type="date" />
+                                <span asp-validation-for="DriversLicenseExpiry" class="text-danger"></span>
+                            </div>
+                        </div>
 
                         <hr />
 

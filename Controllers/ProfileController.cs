@@ -4,6 +4,10 @@ using Microsoft.AspNetCore.Mvc;
 using RideFusion.Models;
 using System.ComponentModel.DataAnnotations;
 using System;
+using RideFusion.Data; // add context
+using Microsoft.Data.Sqlite; // for reading sqlite connection
+using System.IO;
+using Microsoft.EntityFrameworkCore; // FIX: needed for DatabaseFacade extensions like GetDbConnection()
 
 namespace RideFusion.Controllers
 {
@@ -12,11 +16,13 @@ namespace RideFusion.Controllers
     {
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly ILogger<ProfileController> _logger;
+        private readonly ApplicationDbContext _context; // add
 
-        public ProfileController(UserManager<ApplicationUser> userManager, ILogger<ProfileController> logger)
+        public ProfileController(UserManager<ApplicationUser> userManager, ILogger<ProfileController> logger, ApplicationDbContext context)
         {
             _userManager = userManager;
             _logger = logger;
+            _context = context;
         }
 
         public class ProfileInput
@@ -82,7 +88,7 @@ namespace RideFusion.Controllers
             if (user == null) return NotFound();
 
             var roles = await _userManager.GetRolesAsync(user);
-            ViewBag.IsDriver = roles.Contains("Driver");
+            ViewBag.IsDriver = roles.Any(r => string.Equals(r, "Driver", StringComparison.OrdinalIgnoreCase));
 
             var model = new ProfileInput
             {
@@ -103,6 +109,20 @@ namespace RideFusion.Controllers
                 VehicleDetails = user.VehicleDetails
             };
             ViewBag.ReturnUrl = returnUrl;
+
+            // Surface the real DB file path for verification
+            try
+            {
+                var connStr = _context.Database.GetDbConnection().ConnectionString;
+                var builder = new SqliteConnectionStringBuilder(connStr);
+                var absolute = Path.GetFullPath(builder.DataSource);
+                ViewBag.DbFile = absolute;
+            }
+            catch
+            {
+                ViewBag.DbFile = _context.Database.GetDbConnection().ConnectionString;
+            }
+
             return View(model);
         }
 
@@ -114,10 +134,11 @@ namespace RideFusion.Controllers
             if (user == null) return NotFound();
 
             var roles = await _userManager.GetRolesAsync(user);
-            bool isDriver = roles.Contains("Driver");
+            bool isDriver = roles.Any(r => string.Equals(r, "Driver", StringComparison.OrdinalIgnoreCase));
 
             if (!ModelState.IsValid)
             {
+                TempData["Error"] = string.Join(" | ", ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage));
                 ViewBag.IsDriver = isDriver;
                 ViewBag.ReturnUrl = returnUrl;
                 return View(input);
@@ -136,6 +157,7 @@ namespace RideFusion.Controllers
 
             if (!ModelState.IsValid)
             {
+                TempData["Error"] = string.Join(" | ", ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage));
                 ViewBag.IsDriver = isDriver;
                 ViewBag.ReturnUrl = returnUrl;
                 return View(input);
@@ -158,6 +180,7 @@ namespace RideFusion.Controllers
             user.PassengerRideSummary = input.PassengerRideSummary;
             user.VehicleDetails = input.VehicleDetails;
 
+            // Persist via UserManager and ensure changes are saved via DbContext
             var result = await _userManager.UpdateAsync(user);
             if (!result.Succeeded)
             {
@@ -165,17 +188,19 @@ namespace RideFusion.Controllers
                 {
                     ModelState.AddModelError(string.Empty, error.Description);
                 }
+                TempData["Error"] = string.Join(" | ", result.Errors.Select(e => e.Description));
                 ViewBag.IsDriver = isDriver;
                 ViewBag.ReturnUrl = returnUrl;
                 return View(input);
             }
 
+            // Extra safety: save changes for custom fields
+            await _context.SaveChangesAsync();
+
             TempData["SuccessMessage"] = "Profile updated successfully.";
-            if (!string.IsNullOrEmpty(returnUrl))
-            {
-                return LocalRedirect(returnUrl);
-            }
-            return RedirectToAction("Index", "Home");
+
+            // Redirect back to Edit so user sees persisted values immediately
+            return RedirectToAction(nameof(Edit));
         }
     }
 }

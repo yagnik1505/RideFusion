@@ -14,6 +14,15 @@
                     </h4>
                 </div>
                 <div class="card-body">
+                    @if (TempData["SuccessMessage"] != null)
+                    {
+                        <div class="alert alert-success">@TempData["SuccessMessage"]</div>
+                    }
+                    @if (TempData["Error"] != null)
+                    {
+                        <div class="alert alert-danger">@TempData["Error"]</div>
+                    }
+
                     @if (ride != null)
                     {
                         <div class="alert alert-info mb-4">
@@ -53,7 +62,7 @@
                         </div>
 
                         <form asp-action="Create" method="post">
-                            <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
+                            <div asp-validation-summary="All" class="alert alert-danger" role="alert"></div>
                             
                             <input type="hidden" asp-for="RideId" value="@ride.RideId" />
                             
@@ -81,11 +90,11 @@
                                 </div>
                             </div>
 
-                            <div class="alert alert-warning">
-                                <h6><i class="fas fa-shield-alt"></i> Security Notice:</h6>
+                            <div class="alert alert-success">
+                                <h6><i class="fas fa-check-circle"></i> Instant Booking:</h6>
                                 <p class="mb-0">
-                                    After booking, you will receive an OTP (One-Time Password) via email/SMS. 
-                                    You must verify this OTP before the ride starts to confirm your booking.
+                                    Your booking will be confirmed immediately after clicking "Book Now". 
+                                    You can view and manage your bookings in "My Bookings" section.
                                 </p>
                             </div>
 
@@ -95,7 +104,7 @@
                                     <i class="fas fa-arrow-left"></i> Back to Ride Details
                                 </a>
                                 <button type="submit" class="btn btn-success">
-                                    <i class="fas fa-bookmark"></i> Book & Get OTP
+                                    <i class="fas fa-bookmark"></i> Book Now
                                 </button>
                             </div>
                         </form>

@@ -5,21 +5,23 @@ using RideFusion.Data;
 using Microsoft.EntityFrameworkCore;
 using System.Security.Cryptography;
 using RideFusion.Filters;
+using Microsoft.AspNetCore.Identity;
 
 namespace RideFusion.Controllers
 {
     public class BookingController : Controller
     {
         private readonly ApplicationDbContext _context;
+        private readonly UserManager<ApplicationUser> _userManager;
 
-        public BookingController(ApplicationDbContext context)
+        public BookingController(ApplicationDbContext context, UserManager<ApplicationUser> userManager)
         {
             _context = context;
+            _userManager = userManager;
         }
 
         // GET: Booking/Create
         [Authorize]
-        [ProfileCompleted]
         public async Task<IActionResult> Create(int rideId)
         {
             var ride = await _context.Rides
@@ -32,104 +34,107 @@ namespace RideFusion.Controllers
             }
 
             ViewBag.Ride = ride;
-            return View();
+            
+            // Create a new booking model with default values
+            var booking = new Booking
+            {
+                RideId = rideId,
+                SeatsBooked = 1,
+                // Required properties will be set when saving
+                PassengerId = string.Empty,
+                OTP = string.Empty,
+                Ride = ride,
+                Passenger = null!
+            };
+            
+            return View(booking);
         }
 
         // POST: Booking/Create
         [HttpPost]
         [ValidateAntiForgeryToken]
         [Authorize]
-        [ProfileCompleted]
-        public async Task<IActionResult> Create([Bind("RideId,SeatsBooked")] Booking booking)
+        public async Task<IActionResult> Create(Booking booking)
         {
-            if (ModelState.IsValid)
+            try
             {
-                // Generate 6-digit OTP
-                booking.OTP = GenerateOTP();
-                booking.PassengerId = User.Identity.Name; // This will be updated when we implement proper authentication
-                booking.Status = "Pending";
-                booking.IsVerified = false;
+                var userId = _userManager.GetUserId(User);
+                if (string.IsNullOrEmpty(userId))
+                {
+                    TempData["Error"] = "Unable to identify current user.";
+                    return View(booking);
+                }
 
-                _context.Add(booking);
+                // Check if ride has enough available seats
+                var ride = await _context.Rides.FindAsync(booking.RideId);
+                if (ride == null)
+                {
+                    TempData["Error"] = "Ride not found.";
+                    return View(booking);
+                }
+
+                if (ride.AvailableSeats < booking.SeatsBooked)
+                {
+                    TempData["Error"] = $"Not enough seats available. Only {ride.AvailableSeats} seats left.";
+                    return View(booking);
+                }
+
+                // Set required properties for immediate booking confirmation
+                booking.PassengerId = userId;
+                booking.OTP = GenerateOTP(); // Keep for future use, but not required now
+                booking.Status = "Confirmed"; // Directly confirm the booking
+                booking.IsVerified = true; // Mark as verified since no OTP needed
+                booking.CreatedAt = DateTime.UtcNow;
+
+                // Update available seats immediately
+                ride.AvailableSeats -= booking.SeatsBooked;
+
+                // Clear validation errors for server-set properties
+                ModelState.Remove("PassengerId");
+                ModelState.Remove("OTP");
+                ModelState.Remove("Ride");
+                ModelState.Remove("Passenger");
+
+                if (!ModelState.IsValid)
+                {
+                    var errors = string.Join(" | ", ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage));
+                    TempData["Error"] = $"Validation failed: {errors}";
+                    
+                    var rideForView = await _context.Rides
+                        .Include(r => r.Driver)
+                        .FirstOrDefaultAsync(r => r.RideId == booking.RideId);
+                    ViewBag.Ride = rideForView;
+                    return View(booking);
+                }
+
+                _context.Bookings.Add(booking);
                 await _context.SaveChangesAsync();
 
-                // TODO: Send OTP via email/SMS
-                // For now, we'll show it in the view
-
-                return RedirectToAction(nameof(VerifyOTP), new { bookingId = booking.BookingId });
-            }
-
-            var ride = await _context.Rides
-                .Include(r => r.Driver)
-                .FirstOrDefaultAsync(r => r.RideId == booking.RideId);
-            ViewBag.Ride = ride;
-            return View(booking);
-        }
-
-        // GET: Booking/VerifyOTP
-        [Authorize]
-        [ProfileCompleted]
-        public async Task<IActionResult> VerifyOTP(int bookingId)
-        {
-            var booking = await _context.Bookings
-                .Include(b => b.Ride)
-                .ThenInclude(r => r.Driver)
-                .FirstOrDefaultAsync(b => b.BookingId == bookingId);
-
-            if (booking == null || booking.PassengerId != User.Identity.Name)
-            {
-                return NotFound();
-            }
-
-            return View(booking);
-        }
-
-        // POST: Booking/VerifyOTP
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        [Authorize]
-        [ProfileCompleted]
-        public async Task<IActionResult> VerifyOTP(int bookingId, string otp)
-        {
-            var booking = await _context.Bookings
-                .Include(b => b.Ride)
-                .FirstOrDefaultAsync(b => b.BookingId == bookingId);
-
-            if (booking == null || booking.PassengerId != User.Identity.Name)
-            {
-                return NotFound();
-            }
-
-            if (booking.OTP == otp)
-            {
-                booking.IsVerified = true;
-                booking.Status = "Confirmed";
-                
-                // Update available seats
-                booking.Ride.AvailableSeats -= booking.SeatsBooked;
-                
-                await _context.SaveChangesAsync();
-                
-                TempData["SuccessMessage"] = "OTP verified successfully! Your booking is confirmed.";
+                TempData["SuccessMessage"] = "Booking confirmed successfully! Your ride is booked.";
                 return RedirectToAction(nameof(MyBookings));
             }
-            else
+            catch (Exception ex)
             {
-                ModelState.AddModelError("", "Invalid OTP. Please try again.");
+                TempData["Error"] = $"Error creating booking: {ex.Message}";
+                
+                var ride = await _context.Rides
+                    .Include(r => r.Driver)
+                    .FirstOrDefaultAsync(r => r.RideId == booking.RideId);
+                ViewBag.Ride = ride;
+                return View(booking);
             }
-
-            return View(booking);
         }
 
         // GET: Booking/MyBookings
         [Authorize]
-        [ProfileCompleted]
         public async Task<IActionResult> MyBookings()
         {
+            var userId = _userManager.GetUserId(User);
             var bookings = await _context.Bookings
                 .Include(b => b.Ride)
                 .ThenInclude(r => r.Driver)
-                .Where(b => b.PassengerId == User.Identity.Name)
+                .Include(b => b.Passenger)
+                .Where(b => b.PassengerId == userId)
                 .OrderByDescending(b => b.CreatedAt)
                 .ToListAsync();
 
@@ -138,75 +143,37 @@ namespace RideFusion.Controllers
 
         // GET: Booking/DriverBookings
         [Authorize]
-        [ProfileCompleted]
         public async Task<IActionResult> DriverBookings(int rideId)
         {
+            var userId = _userManager.GetUserId(User);
             var bookings = await _context.Bookings
                 .Include(b => b.Passenger)
                 .Include(b => b.Ride)
-                .Where(b => b.RideId == rideId && b.Ride.DriverId == User.Identity.Name)
+                .Where(b => b.RideId == rideId && b.Ride.DriverId == userId)
                 .ToListAsync();
 
             return View(bookings);
-        }
-
-        // POST: Booking/Approve
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        [Authorize]
-        [ProfileCompleted]
-        public async Task<IActionResult> Approve(int bookingId)
-        {
-            var booking = await _context.Bookings
-                .Include(b => b.Ride)
-                .FirstOrDefaultAsync(b => b.BookingId == bookingId);
-
-            if (booking != null && booking.Ride.DriverId == User.Identity.Name)
-            {
-                booking.Status = "Confirmed";
-                await _context.SaveChangesAsync();
-            }
-
-            return RedirectToAction(nameof(DriverBookings), new { rideId = booking.RideId });
-        }
-
-        // POST: Booking/Reject
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        [Authorize]
-        [ProfileCompleted]
-        public async Task<IActionResult> Reject(int bookingId)
-        {
-            var booking = await _context.Bookings
-                .Include(b => b.Ride)
-                .FirstOrDefaultAsync(b => b.BookingId == bookingId);
-
-            if (booking != null && booking.Ride.DriverId == User.Identity.Name)
-            {
-                booking.Status = "Cancelled";
-                booking.Ride.AvailableSeats += booking.SeatsBooked;
-                await _context.SaveChangesAsync();
-            }
-
-            return RedirectToAction(nameof(DriverBookings), new { rideId = booking.RideId });
         }
 
         // POST: Booking/Cancel
         [HttpPost]
         [ValidateAntiForgeryToken]
         [Authorize]
-        [ProfileCompleted]
         public async Task<IActionResult> Cancel(int bookingId)
         {
+            var userId = _userManager.GetUserId(User);
             var booking = await _context.Bookings
                 .Include(b => b.Ride)
-                .FirstOrDefaultAsync(b => b.BookingId == bookingId && b.PassengerId == User.Identity.Name);
+                .FirstOrDefaultAsync(b => b.BookingId == bookingId && b.PassengerId == userId);
 
             if (booking != null)
             {
                 booking.Status = "Cancelled";
+                // Restore available seats
                 booking.Ride.AvailableSeats += booking.SeatsBooked;
                 await _context.SaveChangesAsync();
+                
+                TempData["SuccessMessage"] = "Booking cancelled successfully.";
             }
 
             return RedirectToAction(nameof(MyBookings));
