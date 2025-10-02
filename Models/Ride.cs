@@ -18,6 +18,8 @@ namespace RideFusion.Models
         [Required, MaxLength(200)]
         public required string EndLocation { get; set; }
 
+        [Required]
+        [FutureDate(ErrorMessage = "Please enter a future date and time. Past dates are not allowed.")]
         public DateTime StartDateTime { get; set; }
 
         [Range(0, 50)]

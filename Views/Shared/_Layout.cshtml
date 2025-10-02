@@ -30,18 +30,47 @@
                         <li class="nav-item">
                             <a class="nav-link text-dark" asp-area="" asp-controller="Ride" asp-action="Search">Find Rides</a>
                         </li>
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Ride" asp-action="Create">Offer Ride</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Booking" asp-action="MyBookings">My Bookings</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Chat" asp-action="MyChats">Messages</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Admin" asp-action="Dashboard">Admin</a>
-                        </li>
+                        
+                        @if (SignInManager.IsSignedIn(User))
+                        {
+                            var currentUser = await UserManager.GetUserAsync(User);
+                            if (currentUser != null)
+                            {
+                                var roles = await UserManager.GetRolesAsync(currentUser);
+                                bool isDriver = roles.Any(r => string.Equals(r, "Driver", StringComparison.OrdinalIgnoreCase));
+                                
+                                if (isDriver)
+                                {
+                                    <li class="nav-item">
+                                        <a class="nav-link text-dark" asp-area="" asp-controller="Ride" asp-action="Create">Offer Ride</a>
+                                    </li>
+                                }
+                            }
+                        }
+                        
+                        @if (SignInManager.IsSignedIn(User))
+                        {
+                            <li class="nav-item">
+                                <a class="nav-link text-dark" asp-area="" asp-controller="Booking" asp-action="MyBookings">My Bookings</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link text-dark" asp-area="" asp-controller="Chat" asp-action="MyChats">Messages</a>
+                            </li>
+                            
+                            var currentUser = await UserManager.GetUserAsync(User);
+                            if (currentUser != null)
+                            {
+                                var roles = await UserManager.GetRolesAsync(currentUser);
+                                bool isDriver = roles.Any(r => string.Equals(r, "Driver", StringComparison.OrdinalIgnoreCase));
+                                
+                                if (isDriver)
+                                {
+                                    <li class="nav-item">
+                                        <a class="nav-link text-dark" asp-area="" asp-controller="Ride" asp-action="MyRides">My Rides</a>
+                                    </li>
+                                }
+                            }
+                        }
                     </ul>
                     <partial name="_LoginPartial" />
                 </div>

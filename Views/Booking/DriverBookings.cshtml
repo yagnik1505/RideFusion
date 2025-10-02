@@ -45,7 +45,7 @@
                             <div class="mb-3">
                                 <div class="d-flex justify-content-between">
                                     <span class="text-muted">Total Payment:</span>
-                                    <strong class="text-success">$@(booking.Ride.PricePerSeat * booking.SeatsBooked)</strong>
+                                    <strong class="text-success">&#8377;@(booking.Ride.PricePerSeat * booking.SeatsBooked)</strong>
                                 </div>
                             </div>
 
@@ -136,7 +136,7 @@
                                 <small class="text-muted">Cancelled</small>
                             </div>
                             <div class="col-md-3">
-                                <h4 class="text-primary">@Model.Sum(b => b.Status == "Confirmed" ? b.Ride.PricePerSeat * b.SeatsBooked : 0)</h4>
+                                <h4 class="text-primary">&#8377;@Model.Sum(b => b.Status == "Confirmed" ? b.Ride.PricePerSeat * b.SeatsBooked : 0)</h4>
                                 <small class="text-muted">Total Earnings</small>
                             </div>
                         </div>

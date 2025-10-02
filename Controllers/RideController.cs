@@ -67,6 +67,7 @@ namespace RideFusion.Controllers
             var ride = await _context.Rides
                 .Include(r => r.Driver)
                 .Include(r => r.Bookings)
+                .ThenInclude(b => b.Passenger)
                 .FirstOrDefaultAsync(m => m.RideId == id);
 
             if (ride == null)
@@ -113,6 +114,12 @@ namespace RideFusion.Controllers
                 
                 // Clear any DriverId validation errors since we set it server-side
                 ModelState.Remove("DriverId");
+
+                // Add server-side validation for past dates
+                if (ride.StartDateTime <= DateTime.Now)
+                {
+                    ModelState.AddModelError("StartDateTime", "Please enter a future date and time. Past dates are not allowed.");
+                }
 
                 // Debug validation
                 if (!ModelState.IsValid)
