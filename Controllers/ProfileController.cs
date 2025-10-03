@@ -4,10 +4,10 @@ using Microsoft.AspNetCore.Mvc;
 using RideFusion.Models;
 using System.ComponentModel.DataAnnotations;
 using System;
-using RideFusion.Data; // add context
-using Microsoft.Data.Sqlite; // for reading sqlite connection
+using RideFusion.Data; 
+using Microsoft.Data.Sqlite; 
 using System.IO;
-using Microsoft.EntityFrameworkCore; // FIX: needed for DatabaseFacade extensions like GetDbConnection()
+using Microsoft.EntityFrameworkCore; 
 
 namespace RideFusion.Controllers
 {
@@ -16,7 +16,7 @@ namespace RideFusion.Controllers
     {
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly ILogger<ProfileController> _logger;
-        private readonly ApplicationDbContext _context; // add
+        private readonly ApplicationDbContext _context; 
 
         public ProfileController(UserManager<ApplicationUser> userManager, ILogger<ProfileController> logger, ApplicationDbContext context)
         {
@@ -42,8 +42,16 @@ namespace RideFusion.Controllers
             [Display(Name = "Profile Picture URL (optional)")]
             public string? ProfilePictureUrl { get; set; }
 
-            // Driver detailed vehicle info
-            [Display(Name = "Vehicle Make")]
+            // Common new fields
+            [DataType(DataType.Date)]
+            [Display(Name = "Date of Birth")]
+            public DateTime? DateOfBirth { get; set; }
+
+            [Display(Name = "Gender")]
+            public string? Gender { get; set; }
+
+            // Driver detailed vehicle info (only shown for drivers)
+            [Display(Name = "Vehicle Company")] // renamed from Vehicle Make
             public string? VehicleMake { get; set; }
 
             [Display(Name = "Vehicle Model")]
@@ -56,7 +64,7 @@ namespace RideFusion.Controllers
             [Display(Name = "Vehicle Color")]
             public string? VehicleColor { get; set; }
 
-            [Display(Name = "License Plate")]
+            [Display(Name = "Plate Number")] // renamed from License Plate
             public string? LicensePlate { get; set; }
 
             [Display(Name = "Driver's License Number")]
@@ -72,11 +80,9 @@ namespace RideFusion.Controllers
             [Display(Name = "UPI ID (online payment)")]
             public string? UpiId { get; set; }
 
-            // Passenger optional summary
             [Display(Name = "Ride History Summary (optional)")]
             public string? PassengerRideSummary { get; set; }
 
-            // Backward compatibility field (combined vehicle details)
             [Display(Name = "Vehicle Details (legacy)")]
             public string? VehicleDetails { get; set; }
         }
@@ -96,6 +102,8 @@ namespace RideFusion.Controllers
                 PhoneNumber = user.PhoneNumber,
                 Address = user.Address,
                 ProfilePictureUrl = user.ProfilePictureUrl,
+                DateOfBirth = user.DateOfBirth,
+                Gender = user.Gender,
                 VehicleMake = user.VehicleMake,
                 VehicleModel = user.VehicleModel,
                 VehicleYear = user.VehicleYear,
@@ -110,7 +118,6 @@ namespace RideFusion.Controllers
             };
             ViewBag.ReturnUrl = returnUrl;
 
-            // Surface the real DB file path for verification
             try
             {
                 var connStr = _context.Database.GetDbConnection().ConnectionString;
@@ -144,15 +151,11 @@ namespace RideFusion.Controllers
                 return View(input);
             }
 
-            // Driver-specific validation to mirror filter enforcement
+            // Only validate driver-specific requirements if user is driver
             if (isDriver)
             {
-                if (string.IsNullOrWhiteSpace(input.Address)) ModelState.AddModelError(nameof(input.Address), "Address is required for drivers.");
-                bool hasVehicle = !string.IsNullOrWhiteSpace(input.VehicleDetails) || (!string.IsNullOrWhiteSpace(input.VehicleMake) && !string.IsNullOrWhiteSpace(input.VehicleModel) && input.VehicleYear.HasValue);
-                if (!hasVehicle) ModelState.AddModelError(nameof(input.VehicleMake), "Vehicle details are required for drivers.");
-                if (string.IsNullOrWhiteSpace(input.LicensePlate)) ModelState.AddModelError(nameof(input.LicensePlate), "License plate is required for drivers.");
-                if (string.IsNullOrWhiteSpace(input.DriversLicenseNumber) || !input.DriversLicenseExpiry.HasValue) ModelState.AddModelError(nameof(input.DriversLicenseNumber), "Driver's license number and expiry are required.");
                 if (string.IsNullOrWhiteSpace(input.UpiId)) ModelState.AddModelError(nameof(input.UpiId), "UPI ID is required for drivers.");
+                if (!input.IsAvailable.HasValue) ModelState.AddModelError(nameof(input.IsAvailable), "Availability is required for drivers.");
             }
 
             if (!ModelState.IsValid)
@@ -163,24 +166,24 @@ namespace RideFusion.Controllers
                 return View(input);
             }
 
-            // Map back to user
             user.FullName = input.FullName;
             user.PhoneNumber = input.PhoneNumber;
             user.Address = input.Address;
             user.ProfilePictureUrl = input.ProfilePictureUrl;
-            user.VehicleMake = input.VehicleMake;
-            user.VehicleModel = input.VehicleModel;
-            user.VehicleYear = input.VehicleYear;
-            user.VehicleColor = input.VehicleColor;
-            user.LicensePlate = input.LicensePlate;
-            user.DriversLicenseNumber = input.DriversLicenseNumber;
-            user.DriversLicenseExpiry = input.DriversLicenseExpiry;
-            user.IsAvailable = input.IsAvailable;
-            user.UpiId = input.UpiId;
+            user.DateOfBirth = input.DateOfBirth;
+            user.Gender = input.Gender;
+            user.VehicleMake = isDriver ? input.VehicleMake : null;
+            user.VehicleModel = isDriver ? input.VehicleModel : null;
+            user.VehicleYear = isDriver ? input.VehicleYear : null;
+            user.VehicleColor = isDriver ? input.VehicleColor : null;
+            user.LicensePlate = isDriver ? input.LicensePlate : null;
+            user.DriversLicenseNumber = isDriver ? input.DriversLicenseNumber : null;
+            user.DriversLicenseExpiry = isDriver ? input.DriversLicenseExpiry : null;
+            user.IsAvailable = isDriver ? input.IsAvailable : null;
+            user.UpiId = isDriver ? input.UpiId : null;
             user.PassengerRideSummary = input.PassengerRideSummary;
-            user.VehicleDetails = input.VehicleDetails;
+            user.VehicleDetails = isDriver ? input.VehicleDetails : null;
 
-            // Persist via UserManager and ensure changes are saved via DbContext
             var result = await _userManager.UpdateAsync(user);
             if (!result.Succeeded)
             {
@@ -194,12 +197,10 @@ namespace RideFusion.Controllers
                 return View(input);
             }
 
-            // Extra safety: save changes for custom fields
             await _context.SaveChangesAsync();
 
             TempData["SuccessMessage"] = "Profile updated successfully.";
 
-            // Redirect back to Edit so user sees persisted values immediately
             return RedirectToAction(nameof(Edit));
         }
     }

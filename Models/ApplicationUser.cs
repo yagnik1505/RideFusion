@@ -36,6 +36,10 @@ namespace RideFusion.Models
         // Passenger-side optional summary
         public string? PassengerRideSummary { get; set; }
 
+        // New common fields
+        public System.DateTime? DateOfBirth { get; set; }
+        public string? Gender { get; set; } // e.g., Male, Female, Other
+
         // Navigation
         public ICollection<Ride> Rides { get; set; } = new List<Ride>();          // as Driver
         public ICollection<Booking> Bookings { get; set; } = new List<Booking>();    // as Passenger

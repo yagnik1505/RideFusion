@@ -3,12 +3,12 @@ using Microsoft.AspNetCore.Authorization;
 using RideFusion.Models;
 using RideFusion.Data;
 using Microsoft.EntityFrameworkCore;
-using System.Security.Cryptography;
 using RideFusion.Filters;
 using Microsoft.AspNetCore.Identity;
 
 namespace RideFusion.Controllers
 {
+    [Authorize]
     public class BookingController : Controller
     {
         private readonly ApplicationDbContext _context;
@@ -21,7 +21,7 @@ namespace RideFusion.Controllers
         }
 
         // GET: Booking/Create
-        [Authorize]
+        [ProfileCompleted]
         public async Task<IActionResult> Create(int rideId)
         {
             var ride = await _context.Rides
@@ -35,14 +35,11 @@ namespace RideFusion.Controllers
 
             ViewBag.Ride = ride;
             
-            // Create a new booking model with default values
             var booking = new Booking
             {
                 RideId = rideId,
                 SeatsBooked = 1,
-                // Required properties will be set when saving
                 PassengerId = string.Empty,
-                OTP = string.Empty,
                 Ride = ride,
                 Passenger = null!
             };
@@ -53,7 +50,7 @@ namespace RideFusion.Controllers
         // POST: Booking/Create
         [HttpPost]
         [ValidateAntiForgeryToken]
-        [Authorize]
+        [ProfileCompleted]
         public async Task<IActionResult> Create(Booking booking)
         {
             try
@@ -65,7 +62,6 @@ namespace RideFusion.Controllers
                     return View(booking);
                 }
 
-                // Check if ride has enough available seats
                 var ride = await _context.Rides.FindAsync(booking.RideId);
                 if (ride == null)
                 {
@@ -79,19 +75,13 @@ namespace RideFusion.Controllers
                     return View(booking);
                 }
 
-                // Set required properties for immediate booking confirmation
                 booking.PassengerId = userId;
-                booking.OTP = GenerateOTP(); // Keep for future use, but not required now
-                booking.Status = "Confirmed"; // Directly confirm the booking
-                booking.IsVerified = true; // Mark as verified since no OTP needed
+                booking.Status = "Confirmed"; // directly confirmed
                 booking.CreatedAt = DateTime.UtcNow;
 
-                // Update available seats immediately
                 ride.AvailableSeats -= booking.SeatsBooked;
 
-                // Clear validation errors for server-set properties
                 ModelState.Remove("PassengerId");
-                ModelState.Remove("OTP");
                 ModelState.Remove("Ride");
                 ModelState.Remove("Passenger");
 
@@ -110,7 +100,7 @@ namespace RideFusion.Controllers
                 _context.Bookings.Add(booking);
                 await _context.SaveChangesAsync();
 
-                TempData["SuccessMessage"] = "Booking confirmed successfully! Your ride is booked.";
+                TempData["SuccessMessage"] = "Booking confirmed successfully!";
                 return RedirectToAction(nameof(MyBookings));
             }
             catch (Exception ex)
@@ -126,7 +116,7 @@ namespace RideFusion.Controllers
         }
 
         // GET: Booking/MyBookings
-        [Authorize]
+        [ProfileCompleted]
         public async Task<IActionResult> MyBookings()
         {
             var userId = _userManager.GetUserId(User);
@@ -142,7 +132,7 @@ namespace RideFusion.Controllers
         }
 
         // GET: Booking/DriverBookings
-        [Authorize]
+        [ProfileCompleted]
         public async Task<IActionResult> DriverBookings(int rideId)
         {
             var userId = _userManager.GetUserId(User);
@@ -158,7 +148,7 @@ namespace RideFusion.Controllers
         // POST: Booking/Cancel
         [HttpPost]
         [ValidateAntiForgeryToken]
-        [Authorize]
+        [ProfileCompleted]
         public async Task<IActionResult> Cancel(int bookingId)
         {
             var userId = _userManager.GetUserId(User);
@@ -169,7 +159,6 @@ namespace RideFusion.Controllers
             if (booking != null)
             {
                 booking.Status = "Cancelled";
-                // Restore available seats
                 booking.Ride.AvailableSeats += booking.SeatsBooked;
                 await _context.SaveChangesAsync();
                 
@@ -177,17 +166,6 @@ namespace RideFusion.Controllers
             }
 
             return RedirectToAction(nameof(MyBookings));
-        }
-
-        private string GenerateOTP()
-        {
-            using (var rng = RandomNumberGenerator.Create())
-            {
-                var bytes = new byte[4];
-                rng.GetBytes(bytes);
-                var randomNumber = Math.Abs(BitConverter.ToInt32(bytes, 0));
-                return (randomNumber % 1000000).ToString("D6");
-            }
         }
     }
 }

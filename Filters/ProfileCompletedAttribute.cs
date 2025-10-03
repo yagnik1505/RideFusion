@@ -38,32 +38,27 @@ namespace RideFusion.Filters
                 var roles = await _userManager.GetRolesAsync(user);
                 var isDriver = roles.Contains("Driver");
 
-                // Common requirements for all users
+                // Basic required for everyone
                 bool hasFullName = !string.IsNullOrWhiteSpace(user.FullName);
                 bool hasPhone = !string.IsNullOrWhiteSpace(user.PhoneNumber);
+                bool hasAddress = !string.IsNullOrWhiteSpace(user.Address);
 
-                bool isComplete;
+                bool isComplete = hasFullName && hasPhone && hasAddress;
+
                 if (isDriver)
                 {
-                    // Driver-specific requirements
-                    bool hasAddress = !string.IsNullOrWhiteSpace(user.Address);
-                    bool hasVehicle = !string.IsNullOrWhiteSpace(user.VehicleDetails) ||
-                                      (!string.IsNullOrWhiteSpace(user.VehicleMake) && !string.IsNullOrWhiteSpace(user.VehicleModel) && user.VehicleYear.HasValue);
-                    bool hasPlate = !string.IsNullOrWhiteSpace(user.LicensePlate);
-                    bool hasLicense = !string.IsNullOrWhiteSpace(user.DriversLicenseNumber) && user.DriversLicenseExpiry.HasValue;
                     bool hasUpi = !string.IsNullOrWhiteSpace(user.UpiId);
-
-                    isComplete = hasFullName && hasPhone && hasAddress && hasVehicle && hasPlate && hasLicense && hasUpi;
-                }
-                else
-                {
-                    // Passenger requirements (lighter)
-                    isComplete = hasFullName && hasPhone;
+                    bool hasAvailability = user.IsAvailable.HasValue; // driver must set availability
+                    isComplete = isComplete && hasUpi && hasAvailability;
                 }
 
                 if (!isComplete)
                 {
-                    context.Result = new RedirectToActionResult("Edit", "Profile", new { area = "", returnUrl = context.HttpContext.Request.Path + context.HttpContext.Request.QueryString });
+                    context.Result = new RedirectToActionResult(
+                        "Edit",
+                        "Profile",
+                        new { area = "", returnUrl = context.HttpContext.Request.Path + context.HttpContext.Request.QueryString }
+                    );
                     return;
                 }
 

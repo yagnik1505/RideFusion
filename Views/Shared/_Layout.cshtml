@@ -14,6 +14,7 @@
     @using RideFusion.Models
     @inject SignInManager<ApplicationUser> SignInManager
     @inject UserManager<ApplicationUser> UserManager
+    @{ var currentController = ViewContext.RouteData.Values["controller"]?.ToString(); var currentAction = ViewContext.RouteData.Values["action"]?.ToString(); }
     <header>
         <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3">
             <div class="container-fluid">
@@ -25,12 +26,11 @@
                 <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
                     <ul class="navbar-nav flex-grow-1">
                         <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Index">Home</a>
+                            <a class="nav-link text-dark @(currentController=="Home" && currentAction=="Index" ? "active" : "")" asp-area="" asp-controller="Home" asp-action="Index">Home</a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Ride" asp-action="Search">Find Rides</a>
+                            <a class="nav-link text-dark @(currentController=="Ride" && currentAction=="Search" ? "active" : "")" asp-area="" asp-controller="Ride" asp-action="Search">Find Rides</a>
                         </li>
-                        
                         @if (SignInManager.IsSignedIn(User))
                         {
                             var currentUser = await UserManager.GetUserAsync(User);
@@ -38,35 +38,28 @@
                             {
                                 var roles = await UserManager.GetRolesAsync(currentUser);
                                 bool isDriver = roles.Any(r => string.Equals(r, "Driver", StringComparison.OrdinalIgnoreCase));
-                                
                                 if (isDriver)
                                 {
                                     <li class="nav-item">
-                                        <a class="nav-link text-dark" asp-area="" asp-controller="Ride" asp-action="Create">Offer Ride</a>
+                                        <a class="nav-link text-dark @(currentController=="Ride" && currentAction=="Create" ? "active" : "")" asp-area="" asp-controller="Ride" asp-action="Create">Offer Ride</a>
                                     </li>
                                 }
                             }
                         }
-                        
                         @if (SignInManager.IsSignedIn(User))
                         {
                             <li class="nav-item">
-                                <a class="nav-link text-dark" asp-area="" asp-controller="Booking" asp-action="MyBookings">My Bookings</a>
+                                <a class="nav-link text-dark @(currentController=="Booking" && currentAction=="MyBookings" ? "active" : "")" asp-area="" asp-controller="Booking" asp-action="MyBookings">My Bookings</a>
                             </li>
-                            <li class="nav-item">
-                                <a class="nav-link text-dark" asp-area="" asp-controller="Chat" asp-action="MyChats">Messages</a>
-                            </li>
-                            
                             var currentUser = await UserManager.GetUserAsync(User);
                             if (currentUser != null)
                             {
                                 var roles = await UserManager.GetRolesAsync(currentUser);
                                 bool isDriver = roles.Any(r => string.Equals(r, "Driver", StringComparison.OrdinalIgnoreCase));
-                                
                                 if (isDriver)
                                 {
                                     <li class="nav-item">
-                                        <a class="nav-link text-dark" asp-area="" asp-controller="Ride" asp-action="MyRides">My Rides</a>
+                                        <a class="nav-link text-dark @(currentController=="Ride" && currentAction=="MyRides" ? "active" : "")" asp-area="" asp-controller="Ride" asp-action="MyRides">My Rides</a>
                                     </li>
                                 }
                             }
@@ -85,13 +78,14 @@
             {
                 var roles = await UserManager.GetRolesAsync(currentUser);
                 bool isDriver = roles.Contains("Driver");
-                bool incomplete = string.IsNullOrWhiteSpace(currentUser.FullName) || (isDriver && string.IsNullOrWhiteSpace(currentUser.VehicleDetails));
-                if (incomplete)
+                bool missingBasic = string.IsNullOrWhiteSpace(currentUser.FullName) || string.IsNullOrWhiteSpace(currentUser.PhoneNumber) || string.IsNullOrWhiteSpace(currentUser.Address);
+                bool missingDriver = isDriver && (string.IsNullOrWhiteSpace(currentUser.UpiId) || !currentUser.IsAvailable.HasValue);
+                if (missingBasic || missingDriver)
                 {
                     <div class="alert alert-warning d-flex align-items-center mt-2" role="alert">
                         <i class="fa fa-exclamation-triangle me-2"></i>
                         <div>
-                            Your profile is incomplete. Please <a class="alert-link" asp-area="" asp-controller="Profile" asp-action="Edit">complete your profile</a> to use ride features.
+                            Your profile is incomplete. Please <a class="alert-link" asp-area="" asp-controller="Profile" asp-action="Edit">complete required fields</a> before booking or offering rides.
                         </div>
                     </div>
                 }

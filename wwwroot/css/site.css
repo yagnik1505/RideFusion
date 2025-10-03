@@ -20,3 +20,54 @@ html {
 body {
   margin-bottom: 60px;
 }
+
+/* Active navigation highlighting */
+.navbar-nav .nav-link.active, .navbar-nav .nav-link[aria-current="page"] {
+  color: #0d6efd !important;
+  font-weight: 600;
+  position: relative;
+}
+.navbar-nav .nav-link.active::after, .navbar-nav .nav-link[aria-current="page"]::after {
+  content: "";
+  position: absolute;
+  left: 0; right: 0; bottom: -4px;
+  height: 3px;
+  background: #0d6efd;
+  border-radius: 2px;
+}
+
+/* Username badge styling */
+.user-name-badge {
+  background: linear-gradient(90deg,#0d6efd,#6610f2);
+  color: #fff !important;
+  padding: 4px 12px;
+  border-radius: 30px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  display: inline-block;
+  letter-spacing: .5px;
+}
+
+/* Optional hover effect */
+.user-name-badge:hover {
+  text-decoration: none;
+  box-shadow: 0 0 0 0.15rem rgba(13,110,253,.25);
+}
+
+/* Logout badge variant */
+.logout-badge {
+  background: linear-gradient(90deg,#dc3545,#b02a37);
+  color:#fff !important;
+  padding:4px 14px;
+  border-radius:30px;
+  font-size:0.75rem;
+  font-weight:600;
+  letter-spacing:.6px;
+  border:none;
+  cursor:pointer;
+  text-transform:uppercase;
+}
+.logout-badge:hover {
+  box-shadow:0 0 0 0.15rem rgba(220,53,69,.35);
+  color:#fff !important;
+}

@@ -26,36 +26,14 @@ using (var scope = app.Services.CreateScope())
     var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
     context.Database.Migrate();
 
-    // Seed roles and an admin user
+    // Seed roles only (Driver acts as admin, Passenger regular user). No default admin user.
     var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
-    var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
-
-    var roles = new[] { "Admin", "User", "Driver", "Passenger" };
+    var roles = new[] { "Driver", "Passenger" };
     foreach (var role in roles)
     {
         if (!await roleManager.RoleExistsAsync(role))
         {
             await roleManager.CreateAsync(new IdentityRole(role));
-        }
-    }
-
-    // Seed default admin if not exists (credentials should be changed in production)
-    var adminEmail = "admin@ridefusion.local";
-    var adminUser = await userManager.FindByEmailAsync(adminEmail);
-    if (adminUser == null)
-    {
-        adminUser = new ApplicationUser
-        {
-            UserName = adminEmail,
-            Email = adminEmail,
-            FullName = "Administrator",
-            IsVerified = true,
-            EmailConfirmed = true
-        };
-        var createResult = await userManager.CreateAsync(adminUser, "Admin#12345");
-        if (createResult.Succeeded)
-        {
-            await userManager.AddToRoleAsync(adminUser, "Admin");
         }
     }
 }

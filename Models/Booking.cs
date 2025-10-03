@@ -21,11 +21,6 @@ namespace RideFusion.Models
         [MaxLength(30)]
         public string Status { get; set; } = "Pending"; // Pending, Confirmed, Cancelled
 
-        [MaxLength(10)]
-        public required string OTP { get; set; } // 6-digit recommended
-
-        public bool IsVerified { get; set; }  // true when OTP validated
-
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     }
 }

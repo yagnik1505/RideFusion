@@ -22,16 +22,24 @@ namespace RideFusion.Controllers
         }
 
         // GET: Ride/Search
+        [ProfileCompleted]
         public async Task<IActionResult> Search(string? startLocation, string? endLocation, DateTime? date)
         {
             ViewBag.StartLocation = startLocation;
             ViewBag.EndLocation = endLocation;
             ViewBag.Date = date;
 
+            var currentUserId = _userManager.GetUserId(User); // exclude own rides
+
             var rides = _context.Rides
                 .Include(r => r.Driver)
                 .Include(r => r.Bookings)
                 .Where(r => r.AvailableSeats > 0 && r.StartDateTime >= DateTime.Now.AddMinutes(-30));
+
+            if (!string.IsNullOrEmpty(currentUserId))
+            {
+                rides = rides.Where(r => r.DriverId != currentUserId);
+            }
 
             if (!string.IsNullOrEmpty(startLocation))
             {
@@ -56,7 +64,7 @@ namespace RideFusion.Controllers
             return View(rideList);
         }
 
-        // GET: Ride/Details/5
+        // GET: Ride/Details/5 (kept accessible so user can inspect rides even if profile incomplete)
         public async Task<IActionResult> Details(int? id)
         {
             if (id == null)
@@ -80,15 +88,15 @@ namespace RideFusion.Controllers
 
         // GET: Ride/Create (Offer Ride)
         [HttpGet]
+        [ProfileCompleted]
         public IActionResult Create()
         {
             var model = new Ride
             {
-                // Satisfy required members with defaults for the form; real values are posted back
                 DriverId = _userManager.GetUserId(User) ?? string.Empty,
                 StartLocation = string.Empty,
                 EndLocation = string.Empty,
-                StartDateTime = DateTime.Now.AddHours(1), // sensible default
+                StartDateTime = DateTime.Now.AddHours(1),
                 AvailableSeats = 1,
                 PricePerSeat = 0
             };
@@ -98,6 +106,7 @@ namespace RideFusion.Controllers
         // POST: Ride/Create
         [HttpPost]
         [ValidateAntiForgeryToken]
+        [ProfileCompleted]
         public async Task<IActionResult> Create(Ride ride)
         {
             try
@@ -109,19 +118,15 @@ namespace RideFusion.Controllers
                     return View(ride);
                 }
 
-                // Ensure DriverId is set for validation
                 ride.DriverId = userId;
                 
-                // Clear any DriverId validation errors since we set it server-side
                 ModelState.Remove("DriverId");
 
-                // Add server-side validation for past dates
                 if (ride.StartDateTime <= DateTime.Now)
                 {
                     ModelState.AddModelError("StartDateTime", "Please enter a future date and time. Past dates are not allowed.");
                 }
 
-                // Debug validation
                 if (!ModelState.IsValid)
                 {
                     var errors = string.Join(" | ", ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage));
@@ -144,6 +149,7 @@ namespace RideFusion.Controllers
 
         // GET: Ride/MyRides
         [HttpGet]
+        [ProfileCompleted]
         public async Task<IActionResult> MyRides()
         {
             var userId = _userManager.GetUserId(User);
@@ -193,7 +199,6 @@ namespace RideFusion.Controllers
             {
                 try
                 {
-                    // Ensure the ride remains associated with the current driver
                     var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
                     ride.DriverId = userId;
                     _context.Update(ride);

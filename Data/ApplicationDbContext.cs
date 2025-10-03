@@ -13,7 +13,6 @@ namespace RideFusion.Data
 
         public DbSet<Ride> Rides { get; set; }
         public DbSet<Booking> Bookings { get; set; }
-        public DbSet<ChatMessage> ChatMessages { get; set; }
 
         protected override void OnModelCreating(ModelBuilder builder)
         {
@@ -37,19 +36,6 @@ namespace RideFusion.Data
                 .HasOne(b => b.Passenger)
                 .WithMany(u => u.Bookings)
                 .HasForeignKey(b => b.PassengerId)
-                .OnDelete(DeleteBehavior.Restrict);
-
-            // Configure ChatMessage relationships
-            builder.Entity<ChatMessage>()
-                .HasOne(c => c.Ride)
-                .WithMany()
-                .HasForeignKey(c => c.RideId)
-                .OnDelete(DeleteBehavior.Cascade);
-
-            builder.Entity<ChatMessage>()
-                .HasOne(c => c.Sender)
-                .WithMany()
-                .HasForeignKey(c => c.SenderId)
                 .OnDelete(DeleteBehavior.Restrict);
         }
     }

@@ -1,11 +1,12 @@
 @model RideFusion.Controllers.ProfileController.ProfileInput
 @{
     ViewData["Title"] = "Edit Profile";
+    bool isDriver = ViewBag.IsDriver == true;
 }
 
 <div class="container py-3">
     <div class="row justify-content-center">
-        <div class="col-12 col-lg-10">
+        <div class="col-12 col-lg-8">
             <div class="card shadow-sm">
                 <div class="card-header bg-primary text-white">
                     <h4 class="mb-0"><i class="fa fa-id-card me-2"></i>@ViewData["Title"]</h4>
@@ -39,102 +40,92 @@
                                 <input asp-for="Address" class="form-control" />
                                 <span asp-validation-for="Address" class="text-danger"></span>
                             </div>
-                            <div class="col-md-8">
-                                <label asp-for="ProfilePictureUrl" class="form-label"></label>
-                                <input asp-for="ProfilePictureUrl" class="form-control" />
-                                <span asp-validation-for="ProfilePictureUrl" class="text-danger"></span>
-                            </div>
-                            <div class="col-md-4 d-flex align-items-end">
-                                @if (!string.IsNullOrWhiteSpace(Model.ProfilePictureUrl))
-                                {
-                                    <img src="@Model.ProfilePictureUrl" class="img-thumbnail" alt="Profile picture" style="max-height:80px;" />
-                                }
-                            </div>
-                        </div>
-
-                        <hr />
-
-                        <div class="row g-3">
                             <div class="col-md-6">
-                                <label asp-for="UpiId" class="form-label"></label>
-                                <input asp-for="UpiId" class="form-control" placeholder="yourname@upi" />
-                                <span class="form-text">Drivers must set UPI to accept online payments.</span>
-                                <span asp-validation-for="UpiId" class="text-danger"></span>
+                                <label asp-for="DateOfBirth" class="form-label"></label>
+                                <input asp-for="DateOfBirth" class="form-control" type="date" />
+                                <span asp-validation-for="DateOfBirth" class="text-danger"></span>
                             </div>
                             <div class="col-md-6">
-                                <label for="IsAvailable" class="form-label">Availability Status</label>
-                                <select asp-for="IsAvailable" class="form-select">
-                                    <option value="">Not specified</option>
-                                    <option value="true">Available</option>
-                                    <option value="false">Unavailable</option>
+                                <label asp-for="Gender" class="form-label"></label>
+                                <select asp-for="Gender" class="form-select">
+                                    <option value="">Select</option>
+                                    <option>Male</option>
+                                    <option>Female</option>
+                                    <option>Other</option>
                                 </select>
-                                <span asp-validation-for="IsAvailable" class="text-danger"></span>
+                                <span asp-validation-for="Gender" class="text-danger"></span>
                             </div>
                         </div>
 
-                        <hr />
+                        @if (isDriver)
+                        {
+                            <hr />
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label asp-for="UpiId" class="form-label"></label>
+                                    <input asp-for="UpiId" class="form-control" placeholder="yourname@upi" />
+                                    <span asp-validation-for="UpiId" class="text-danger"></span>
+                                </div>
+                                <div class="col-md-6">
+                                    <label asp-for="IsAvailable" class="form-label"></label>
+                                    <select asp-for="IsAvailable" class="form-select">
+                                        <option value="">Not specified</option>
+                                        <option value="true">Available</option>
+                                        <option value="false">Unavailable</option>
+                                    </select>
+                                    <span asp-validation-for="IsAvailable" class="text-danger"></span>
+                                </div>
+                            </div>
 
-                        <div class="alert alert-info" role="alert">
-                            The following section is required for Drivers.
-                        </div>
-
-                        <div class="row g-3">
-                            <div class="col-md-6">
-                                <label asp-for="VehicleDetails" class="form-label"></label>
-                                <input asp-for="VehicleDetails" class="form-control" />
-                                <div class="form-text">Legacy combined field (optional if you use detailed fields).</div>
-                                <span asp-validation-for="VehicleDetails" class="text-danger"></span>
+                            <hr />
+                            <div class="alert alert-info" role="alert">Driver Details</div>
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label asp-for="VehicleDetails" class="form-label"></label>
+                                    <input asp-for="VehicleDetails" class="form-control" />
+                                    <span asp-validation-for="VehicleDetails" class="text-danger"></span>
+                                </div>
                             </div>
-                        </div>
-
-                        <div class="row g-3 mt-1">
-                            <div class="col-md-3">
-                                <label asp-for="VehicleMake" class="form-label"></label>
-                                <input asp-for="VehicleMake" class="form-control" />
-                                <span asp-validation-for="VehicleMake" class="text-danger"></span>
+                            <div class="row g-3 mt-1">
+                                <div class="col-md-3">
+                                    <label asp-for="VehicleMake" class="form-label">Vehicle Company</label>
+                                    <input asp-for="VehicleMake" class="form-control" />
+                                    <span asp-validation-for="VehicleMake" class="text-danger"></span>
+                                </div>
+                                <div class="col-md-3">
+                                    <label asp-for="VehicleModel" class="form-label"></label>
+                                    <input asp-for="VehicleModel" class="form-control" />
+                                    <span asp-validation-for="VehicleModel" class="text-danger"></span>
+                                </div>
+                                <div class="col-md-2">
+                                    <label asp-for="VehicleYear" class="form-label"></label>
+                                    <input asp-for="VehicleYear" class="form-control" type="number" min="1900" max="2100" />
+                                    <span asp-validation-for="VehicleYear" class="text-danger"></span>
+                                </div>
+                                <div class="col-md-2">
+                                    <label asp-for="VehicleColor" class="form-label"></label>
+                                    <input asp-for="VehicleColor" class="form-control" />
+                                    <span asp-validation-for="VehicleColor" class="text-danger"></span>
+                                </div>
+                                <div class="col-md-2">
+                                    <label asp-for="LicensePlate" class="form-label">Plate Number</label>
+                                    <input asp-for="LicensePlate" class="form-control" />
+                                    <span asp-validation-for="LicensePlate" class="text-danger"></span>
+                                </div>
                             </div>
-                            <div class="col-md-3">
-                                <label asp-for="VehicleModel" class="form-label"></label>
-                                <input asp-for="VehicleModel" class="form-control" />
-                                <span asp-validation-for="VehicleModel" class="text-danger"></span>
+                            <div class="row g-3 mt-1">
+                                <div class="col-md-6">
+                                    <label asp-for="DriversLicenseNumber" class="form-label"></label>
+                                    <input asp-for="DriversLicenseNumber" class="form-control" />
+                                    <span asp-validation-for="DriversLicenseNumber" class="text-danger"></span>
+                                </div>
+                                <div class="col-md-6">
+                                    <label asp-for="DriversLicenseExpiry" class="form-label"></label>
+                                    <input asp-for="DriversLicenseExpiry" class="form-control" type="date" />
+                                    <span asp-validation-for="DriversLicenseExpiry" class="text-danger"></span>
+                                </div>
                             </div>
-                            <div class="col-md-2">
-                                <label asp-for="VehicleYear" class="form-label"></label>
-                                <input asp-for="VehicleYear" class="form-control" type="number" min="1900" max="2100" />
-                                <span asp-validation-for="VehicleYear" class="text-danger"></span>
-                            </div>
-                            <div class="col-md-2">
-                                <label asp-for="VehicleColor" class="form-label"></label>
-                                <input asp-for="VehicleColor" class="form-control" />
-                                <span asp-validation-for="VehicleColor" class="text-danger"></span>
-                            </div>
-                            <div class="col-md-2">
-                                <label asp-for="LicensePlate" class="form-label"></label>
-                                <input asp-for="LicensePlate" class="form-control" />
-                                <span asp-validation-for="LicensePlate" class="text-danger"></span>
-                            </div>
-                        </div>
-
-                        <div class="row g-3 mt-1">
-                            <div class="col-md-6">
-                                <label asp-for="DriversLicenseNumber" class="form-label"></label>
-                                <input asp-for="DriversLicenseNumber" class="form-control" />
-                                <span asp-validation-for="DriversLicenseNumber" class="text-danger"></span>
-                            </div>
-                            <div class="col-md-6">
-                                <label asp-for="DriversLicenseExpiry" class="form-label"></label>
-                                <input asp-for="DriversLicenseExpiry" class="form-control" type="date" />
-                                <span asp-validation-for="DriversLicenseExpiry" class="text-danger"></span>
-                            </div>
-                        </div>
-
-                        <hr />
-
-                        <div class="mb-3">
-                            <label asp-for="PassengerRideSummary" class="form-label"></label>
-                            <textarea asp-for="PassengerRideSummary" class="form-control" rows="3"></textarea>
-                            <span asp-validation-for="PassengerRideSummary" class="text-danger"></span>
-                        </div>
+                        }
 
                         <input type="hidden" name="returnUrl" value="@ViewBag.ReturnUrl" />
 
